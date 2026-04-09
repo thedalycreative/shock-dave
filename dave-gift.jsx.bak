@@ -1,0 +1,1161 @@
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+
+// ════════════════════════════════════════════════════════════════
+//  BASE CONFIG  ← Tim: change sitePassword before going live
+// ════════════════════════════════════════════════════════════════
+const BASE = {
+  sitePassword:    "openup",   // ← the password Dave gets
+  adminPassword:   "asdf",
+  defaultInterval: 8 * 60 * 60 * 1000,  // 8 h between clues
+  defaultLockout:  15 * 60 * 1000,       // 15 min wrong-answer penalty
+};
+
+// ════════════════════════════════════════════════════════════════
+//  STORAGE  (all keys prefixed dg_)
+// ════════════════════════════════════════════════════════════════
+const LS = {
+  get:   (k, d = null) => { try { const v = localStorage.getItem(`dg_${k}`); return v !== null ? JSON.parse(v) : d; } catch { return d; } },
+  set:   (k, v)        => { try { localStorage.setItem(`dg_${k}`, JSON.stringify(v)); } catch {} },
+  del:   (k)           => { try { localStorage.removeItem(`dg_${k}`); } catch {} },
+  clear: ()            => { ["start","solved","lockout","lockoutClue","timers","disabled"].forEach(k => LS.del(k)); sessionStorage.removeItem("dg_intro"); },
+};
+
+// ════════════════════════════════════════════════════════════════
+//  CLUE DATA  (12 clues)
+// ════════════════════════════════════════════════════════════════
+const CLUES = [
+  {
+    id: 1, type: "text",
+    question: "In 1880, the Victorian Government issued a reward for the capture of Australia's most wanted man.\n\nWho was he?",
+    check: v => ["ned kelly","kelly","edward kelly","ned"].includes(v.toLowerCase().trim()),
+    placeholder: "Full name or surname…",
+    hint: "He wore a homemade iron helmet. He was not subtle.",
+    flavor: "£8,000. Not a bad price for one man.",
+    adminLabel: "Ned Kelly reward",
+    adminAnswer: "Ned Kelly",
+  },
+  {
+    id: 2, type: "text",
+    question: "A person runs 10 km every day for a full year.\n\nWhich muscle group does research identify as the primary driver of forward propulsion — not stabilisation, not cushioning, but propulsion?",
+    check: v => ["calf","calves","soleus","gastrocnemius","calf muscle","calf muscles"].includes(v.toLowerCase().trim()),
+    placeholder: "Muscle or muscle group…",
+    hint: "Below the knee. Behind the shin. You use it constantly.",
+    flavor: "The thing that keeps you moving.",
+    adminLabel: "Running muscle",
+    adminAnswer: "Calf / Soleus",
+  },
+  {
+    id: 3, type: "choice",
+    quote: "Friendship is the inexpressible comfort of feeling safe with a person — having neither to weigh thoughts nor measure words.",
+    question: "Who wrote this?",
+    options: ["George Eliot","Virginia Woolf","Oscar Wilde","Maya Angelou"],
+    answer: "George Eliot",
+    flavor: "She knew something about what it means to feel genuinely at ease.",
+    adminLabel: "Quote author",
+    adminAnswer: "George Eliot",
+  },
+  {
+    id: 4, type: "text",
+    question: "How many VFL/AFL premierships has the Collingwood Football Club won, as of their most recent victory in 2023?",
+    check: v => v.trim() === "16",
+    placeholder: "A number…",
+    hint: "Google it. There's no shame.",
+    flavor: "16 flags. Go Pies.",
+    adminLabel: "Collingwood premierships",
+    adminAnswer: "16",
+  },
+  {
+    id: 5, type: "buildings",
+    images: [
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Tate_Modern_from_the_south.jpg/640px-Tate_Modern_from_the_south.jpg",    check: v => ["tate modern","tate","tate gallery"].includes(v.toLowerCase().trim()), label: "1 of 5 — Name this building" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Mus%C3%A9e_d%27Orsay_2014%28cropped%29.jpg/640px-Mus%C3%A9e_d%27Orsay_2014%28cropped%29.jpg", check: v => v.toLowerCase().replace(/[éèê]/g,"e").replace(/[^a-z\s]/g,"").includes("orsay"), label: "2 of 5 — Name this building" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/High_Line_-_Section_2_opening.jpg/640px-High_Line_-_Section_2_opening.jpg",  check: v => ["high line","the high line","highline"].includes(v.toLowerCase().trim()), label: "3 of 5 — Name this structure" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Battersea_Power_Station_from_the_north.jpg/640px-Battersea_Power_Station_from_the_north.jpg", check: v => v.toLowerCase().includes("battersea"), label: "4 of 5 — Name this building" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Wien_-_Gasometer_%28Au%C3%9Fenansicht%29.jpg/640px-Wien_-_Gasometer_%28Au%C3%9Fenansicht%29.jpg", check: v => v.toLowerCase().includes("gasometer"), label: "5 of 5 — Name this structure" },
+    ],
+    commonOptions: [
+      "All are in Europe","All were built before 1900","All are UNESCO World Heritage Sites","All are government-owned",
+      "All were built for one purpose and now serve a completely different one","All were designed by female architects",
+      "All feature in major motion pictures","All were nearly demolished before being repurposed","All are free to enter",
+      "All are made primarily of brick","All have underground facilities","All have been used as music venues",
+      "All are named after a person","All appear on their country's currency","All were once considered eyesores",
+      "All are located in capital cities","All have been replicated elsewhere in the world","All opened in the same decade",
+      "All were designed by the same architectural firm","All were converted into residential apartments",
+    ],
+    commonAnswer: "All were built for one purpose and now serve a completely different one",
+    flavor: "Everything can become something else.",
+    lockout: true,
+    adminLabel: "Five buildings + common theme",
+    adminAnswer: "All repurposed buildings",
+  },
+  {
+    id: 6, type: "text",
+    question: "Vipassana meditation requires participants to remain in complete silence for the entire duration of its foundational course.\n\nHow many days does it run?",
+    check: v => ["10","ten"].includes(v.toLowerCase().trim()),
+    placeholder: "Number of days…",
+    hint: "A round number. Not a small one.",
+    flavor: "Ten days of silence. Sounds dreadful. Or perfect.",
+    adminLabel: "Vipassana duration",
+    adminAnswer: "10 days",
+  },
+  {
+    id: 7, type: "text",
+    question: "A chef is preparing fresh pasta from scratch.\n\nBefore the pasta enters the pot, what three things must already be in it?\n\nSeparate your answers with commas.",
+    check: v => { const p = v.toLowerCase().split(",").map(s => s.trim()); const has = t => p.some(x => x.includes(t)); return has("water") && has("salt") && has("oil"); },
+    placeholder: "Three things, separated by commas…",
+    hint: "Not pasta ingredients — what's already in the pot before anything goes in.",
+    flavor: "Water, salt, oil. The fundamentals, always.",
+    adminLabel: "Pasta pot contents",
+    adminAnswer: "Water, salt, oil",
+  },
+  {
+    id: 8, type: "slider",
+    question: "Two temperatures.\n\nSet the point at which water freezes, and the point at which it boils.",
+    sliders: [
+      { label: "Freezes at", answer: 0,   unit: "°C" },
+      { label: "Boils at",   answer: 100, unit: "°C" },
+    ],
+    range: [-50, 200],
+    tolerance: 2,
+    flavor: "Zero degrees and one hundred. Everything between them is just a matter of degree.",
+    adminLabel: "Water temperature sliders",
+    adminAnswer: "0°C and 100°C",
+  },
+  {
+    id: 9, type: "choice",
+    question: "Cotton cultivation has been traced back approximately how many years — and to which two ancient civilisations that developed it independently, with no contact between them?",
+    options: ["3,000 years / Egypt and China","7,000 years / Indus Valley and Mesoamerica","5,000 years / Ancient Greece and Persia","10,000 years / Mesopotamia and Japan"],
+    answer: "7,000 years / Indus Valley and Mesoamerica",
+    flavor: "Seven thousand years of a single thread.",
+    adminLabel: "Cotton history",
+    adminAnswer: "7,000 yrs / Indus Valley & Mesoamerica",
+  },
+  {
+    id: 10, type: "text",
+    question: "A rectangular garden has a perimeter of 78 metres. The length is 11 metres more than the width.\n\nWhat is the area of the garden in square metres?",
+    check: v => v.replace(/[^0-9]/g,"").trim() === "350",
+    placeholder: "Area in m²…",
+    hint: "Perimeter = 2(l + w). Length = width + 11. Solve for width first.",
+    flavor: "350. Hold onto that number.",
+    lockout: true,
+    adminLabel: "Garden algebra (area = 350 m²)",
+    adminAnswer: "350 m²",
+  },
+  {
+    id: 11, type: "choice",
+    question: "Long before graduation ceremonies or royal courts, a single draped garment without stitching defined the formal dress of an entire civilisation for centuries.\n\nWhich civilisation?",
+    options: ["Ancient Greece","Ancient Rome","The Ottoman Empire","The Han Dynasty"],
+    answer: "Ancient Rome",
+    flavor: "One piece of fabric. A whole empire dressed in it.",
+    adminLabel: "Toga civilisation",
+    adminAnswer: "Ancient Rome",
+  },
+  {
+    id: 12, type: "text",
+    question: "Roman engineers invented a system of raised floors and hollow walls through which hot air circulated from a furnace below — warming entire buildings from the ground up.\n\nUsed in homes, public spaces, and communal gathering buildings across the empire.\n\nWhat was this system called?",
+    check: v => ["hypocaust","hypocaustum","the hypocaust"].includes(v.toLowerCase().trim()),
+    placeholder: "The name of the system…",
+    hint: "A single Greek-derived word. Googleable.",
+    flavor: "Heat, rising from below. Ancient technology. Still extraordinary.",
+    lockout: true,
+    adminLabel: "Roman underfloor heating",
+    adminAnswer: "Hypocaust",
+  },
+];
+
+const REVEAL_PAIRS = [
+  ["Ned Kelly.",                          "£8,000 for one man."],
+  ["The calf.",                           "The thing that keeps you moving."],
+  ["George Eliot.",                       "On the comfort of feeling safe with someone."],
+  ["16 flags.",                           "Go Pies."],
+  ["Five buildings. One thing in common.","Everything can become something else."],
+  ["Ten days of silence.",                "Sounds dreadful. Or perfect."],
+  ["Boiling water, salt and oil.",        "The fundamentals, always."],
+  ["Zero degrees. One hundred degrees.",  "Everything between them."],
+  ["Seven thousand years of cotton.",     "A single thread."],
+  ["350 square metres.",                  "Hold onto that number."],
+  ["Ancient Rome.",                       "One piece of fabric. A whole empire."],
+  ["The hypocaust.",                      "Heat, rising from below."],
+];
+
+// ════════════════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════════════════
+const now        = () => Date.now();
+const getUnlocked  = (ts, ms) => !ts ? 0 : Math.min(CLUES.length, Math.floor((now() - ts) / ms) + 1);
+const buildPending = (n, s, d) => { const p = []; for (let i = 1; i <= n; i++) if (!s.includes(i) && !d.includes(i)) p.push(i); return p; };
+const fmtMs        = ms => { if (ms <= 0) return "00:00:00"; const s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sc = s % 60; return [h, m, sc].map(n => String(n).padStart(2, "0")).join(":"); };
+const shuffle      = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function useNow(ms = 500) {
+  const [t, setT] = useState(Date.now());
+  useEffect(() => { const id = setInterval(() => setT(Date.now()), ms); return () => clearInterval(id); }, [ms]);
+  return t;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  GLOBAL CSS
+// ════════════════════════════════════════════════════════════════
+const GLOBAL_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+::selection { background: rgba(200,164,90,0.25); }
+:root {
+  --bg:     #0d0b08;
+  --bg2:    #141109;
+  --fg:     #ede8dd;
+  --accent: #c8a45a;
+  --adim:   rgba(200,164,90,0.12);
+  --muted:  #5a5347;
+  --border: #2a2519;
+  --red:    #c84848;
+  --green:  #5a9e6a;
+  --serif:  'Cormorant Garamond', Georgia, serif;
+  --mono:   'DM Mono', 'Courier New', monospace;
+}
+html, body { background: var(--bg); color: var(--fg); font-family: var(--serif); }
+
+@keyframes fadeUp    { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+@keyframes fadeIn    { from { opacity:0; } to { opacity:1; } }
+@keyframes slideIn   { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:none; } }
+@keyframes pulse     { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+@keyframes shake     { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+@keyframes glow      { 0%{box-shadow:0 0 0 0 rgba(200,164,90,0)} 100%{box-shadow:0 0 36px 6px rgba(200,164,90,0.13)} }
+@keyframes grain     { 0%,100%{transform:translate(0,0)} 10%{transform:translate(-2%,-3%)} 30%{transform:translate(3%,2%)} 50%{transform:translate(-1%,4%)} 70%{transform:translate(2%,-2%)} 90%{transform:translate(-3%,1%)} }
+@keyframes steamRise { 0%{transform:translateY(0) scale(1);opacity:0.78} 100%{transform:translateY(-115vh) scale(3);opacity:0} }
+@keyframes steamFade { 0%{opacity:0} 30%{opacity:1} 72%{opacity:1} 100%{opacity:0} }
+@keyframes scaleIn   { from{opacity:0;transform:scale(0.95) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes introLine { from{opacity:0;transform:translateY(22px);filter:blur(5px)} to{opacity:1;transform:translateY(0);filter:blur(0)} }
+
+input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:1px; background:var(--border); outline:none; cursor:pointer; margin:10px 0; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--accent); border:3px solid var(--bg); cursor:pointer; box-shadow:0 0 0 1px var(--accent); }
+input[type=range]::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:var(--accent); border:3px solid var(--bg); cursor:pointer; }
+.shake { animation: shake 0.4s ease; }
+.admin-scroll::-webkit-scrollbar { width:3px; }
+.admin-scroll::-webkit-scrollbar-track { background:transparent; }
+.admin-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+`;
+
+// ════════════════════════════════════════════════════════════════
+//  STEAM OVERLAY  — white-blur wipe + ambient particles
+// ════════════════════════════════════════════════════════════════
+const STEAM_PTS = Array.from({ length: 24 }, (_, i) => ({
+  id: i,
+  left:  `${(i * 4.3) % 94}%`,
+  size:  52 + (i * 19) % 110,
+  delay: (i * 0.048) % 0.5,
+  dur:   0.6 + (i * 0.075) % 0.58,
+}));
+
+function SteamOverlay({ active }) {
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    if (active) { setVis(true); }
+    else { const t = setTimeout(() => setVis(false), 750); return () => clearTimeout(t); }
+  }, [active]);
+  if (!vis) return null;
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:9500, overflow:"hidden", pointerEvents:active?"all":"none" }}>
+      {/* Blur & tint sheet */}
+      <div style={{ position:"absolute", inset:0, background:"rgba(240,234,216,0.15)", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", animation:"steamFade 1.15s ease forwards" }}/>
+      {/* Rising particles */}
+      {STEAM_PTS.map(p => (
+        <div key={p.id} style={{
+          position:"absolute", bottom:"-90px", left:p.left,
+          width:`${p.size}px`, height:`${p.size * 1.45}px`, borderRadius:"50%",
+          background:"radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.9), rgba(255,255,255,0))",
+          filter:"blur(18px)",
+          animation:`steamRise ${p.dur}s ${p.delay}s ease-out forwards`,
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CONFETTI CANNON  — two bottom-corner launches
+// ════════════════════════════════════════════════════════════════
+function ConfettiCannon({ active }) {
+  const cvs = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    if (!active) return;
+    const c = cvs.current; if (!c) return;
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    const ctx = c.getContext("2d");
+    const cols = ["#c8a45a","#ede8dd","#ffffff","#d4af7a","#8b7355","#f5e6c8","#a08040","#e8d0a0"];
+    const pts  = Array.from({ length: 260 }, (_, i) => {
+      const left = i < 130;
+      const ang  = (left ? 25 + Math.random() * 65 : 115 + Math.random() * 40) * Math.PI / 180;
+      const spd  = 9 + Math.random() * 17;
+      return { x: left ? 0 : c.width, y: c.height,
+               vx: Math.cos(ang) * spd, vy: -Math.abs(Math.sin(ang)) * spd,
+               w:5+Math.random()*10, h:3+Math.random()*5,
+               color:cols[Math.floor(Math.random()*cols.length)],
+               rot:Math.random()*360, rspd:(Math.random()-.5)*12,
+               grav:0.22+Math.random()*0.22, dead:false };
+    });
+    let frame = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, c.width, c.height);
+      let alive = false;
+      pts.forEach(p => {
+        if (p.dead) return;
+        p.x += p.vx; p.y += p.vy; p.vy += p.grav; p.rot += p.rspd;
+        const op = Math.max(0, 1 - frame / 175);
+        if (op <= 0 || p.y > c.height + 30) { p.dead = true; return; }
+        alive = true;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180);
+        ctx.globalAlpha = op; ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+      frame++;
+      if (alive) raf.current = requestAnimationFrame(draw);
+    };
+    raf.current = requestAnimationFrame(draw);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [active]);
+  if (!active) return null;
+  return <canvas ref={cvs} style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:300 }}/>;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SHARED ATOMS
+// ════════════════════════════════════════════════════════════════
+function Shell({ children, center = true }) {
+  return (
+    <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:center?"center":"flex-start", padding:"32px 24px 110px", position:"relative", overflow:"hidden" }}>
+      <div style={{ position:"fixed", inset:0, backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`, backgroundRepeat:"repeat", backgroundSize:"180px", opacity:0.55, pointerEvents:"none", zIndex:0, animation:"grain 8s steps(10) infinite" }}/>
+      <div style={{ width:"100%", maxWidth:"500px", position:"relative", zIndex:1 }}>{children}</div>
+    </div>
+  );
+}
+function Mono({ children, size=11, color="var(--muted)", spacing="0.2em", style={} }) {
+  return <span style={{ fontFamily:"var(--mono)", fontSize:`${size}px`, color, letterSpacing:spacing, ...style }}>{children}</span>;
+}
+function Divider({ my=24, opacity=0.4 }) {
+  return <div style={{ width:"40px", height:"1px", background:"var(--accent)", margin:`${my}px 0`, opacity }}/>;
+}
+function ClueNum({ id }) {
+  return <div style={{ marginBottom:"32px" }}><Mono size={11} color="var(--accent)" spacing="0.3em">{String(id).padStart(2,"0")} / {String(CLUES.length).padStart(2,"0")}</Mono></div>;
+}
+function StyledInput({ value, onChange, onSubmit, placeholder, shake, autoFocus=true }) {
+  return (
+    <div className={shake?"shake":""}>
+      <input type="text" value={value} onChange={e=>onChange(e.target.value)} onKeyDown={e=>e.key==="Enter"&&onSubmit()} placeholder={placeholder} autoFocus={autoFocus}
+        style={{ width:"100%", background:"transparent", border:"none", borderBottom:"1px solid var(--border)", color:"var(--fg)", fontFamily:"var(--mono)", fontSize:"15px", padding:"12px 0", outline:"none", letterSpacing:"0.02em" }}
+        onFocus={e=>e.target.style.borderBottomColor="var(--accent)"} onBlur={e=>e.target.style.borderBottomColor="var(--border)"}/>
+    </div>
+  );
+}
+function GhostBtn({ onClick, children, color="var(--muted)", borderColor="var(--border)", style={} }) {
+  const [h, setH] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{ background:h?"var(--adim)":"transparent", border:`1px solid ${h?"var(--accent)":borderColor}`, color:h?"var(--accent)":color, fontFamily:"var(--mono)", fontSize:"12px", letterSpacing:"0.2em", padding:"10px 28px", cursor:"pointer", textTransform:"uppercase", transition:"all 0.18s", ...style }}>
+      {children}
+    </button>
+  );
+}
+function Hint({ text }) {
+  const [shown, setShown] = useState(false);
+  return (
+    <div style={{ marginTop:"18px" }}>
+      {!shown
+        ? <button onClick={()=>setShown(true)} style={{ background:"none", border:"none", fontFamily:"var(--mono)", fontSize:"11px", color:"var(--muted)", cursor:"pointer", letterSpacing:"0.15em", textTransform:"uppercase", opacity:0.5, padding:0 }}>need a hint?</button>
+        : <div style={{ borderLeft:"2px solid var(--accent)", paddingLeft:"12px", animation:"fadeIn 0.3s ease" }}><Mono size={12} color="var(--muted)" spacing="0.05em" style={{ lineHeight:1.75 }}>{text}</Mono></div>
+      }
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CLUE TYPE COMPONENTS
+// ════════════════════════════════════════════════════════════════
+function TextClue({ clue, onCorrect, onLockout }) {
+  const [val, setVal] = useState(""); const [shake, setShake] = useState(false); const [wrong, setWrong] = useState(false);
+  const submit = () => {
+    if (!val.trim()) return;
+    if (clue.check(val)) { onCorrect(); return; }
+    setWrong(true); setShake(true); setTimeout(() => setShake(false), 400);
+    if (clue.lockout) { setTimeout(onLockout, 500); return; }
+    setTimeout(() => setWrong(false), 2200); setVal("");
+  };
+  return (
+    <div>
+      <StyledInput value={val} onChange={setVal} onSubmit={submit} placeholder={clue.placeholder} shake={shake}/>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginTop:"8px", flexWrap:"wrap", gap:"8px" }}>
+        <GhostBtn onClick={submit}>Submit</GhostBtn>
+        {clue.hint && <Hint text={clue.hint}/>}
+      </div>
+      {wrong && !clue.lockout && <div style={{ marginTop:"14px", animation:"fadeIn 0.3s ease" }}><Mono size={12} color="var(--red)" spacing="0.08em">Not quite. Try again.</Mono></div>}
+    </div>
+  );
+}
+function ChoiceClue({ clue, onCorrect }) {
+  const [sel, setSel] = useState(null); const [wrong, setWrong] = useState(null);
+  const choose = opt => {
+    if (sel || wrong) return;
+    if (opt === clue.answer) { setSel(opt); setTimeout(onCorrect, 700); }
+    else { setWrong(opt); setTimeout(() => setWrong(null), 950); }
+  };
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+      {clue.options.map((opt, i) => {
+        const isSel = sel === opt, isWrong = wrong === opt;
+        return (
+          <button key={i} onClick={() => choose(opt)}
+            style={{ background:isSel?"var(--adim)":"transparent", border:`1px solid ${isSel?"var(--accent)":isWrong?"var(--red)":"var(--border)"}`, color:isSel?"var(--accent)":isWrong?"var(--red)":"var(--fg)", fontFamily:"var(--serif)", fontSize:"17px", fontWeight:300, padding:"14px 18px", textAlign:"left", cursor:"pointer", lineHeight:1.5, transition:"all 0.18s", animation:`fadeUp ${0.08+i*0.06}s ease both` }}
+            onMouseEnter={e=>{ if(!isSel&&!wrong){e.currentTarget.style.borderColor="var(--accent)";e.currentTarget.style.background="var(--adim)";}}}
+            onMouseLeave={e=>{ if(!isSel){e.currentTarget.style.borderColor=isWrong?"var(--red)":"var(--border)";e.currentTarget.style.background="transparent";}}}
+          >{opt}</button>
+        );
+      })}
+    </div>
+  );
+}
+function SliderClue({ clue, onCorrect }) {
+  const [mn, mx] = clue.range; const mid = Math.round((mn + mx) / 2);
+  const [vals, setVals] = useState(clue.sliders.map(() => mid));
+  const [tried, setTried] = useState(false); const [allGood, setAllGood] = useState(false);
+  const setVal = (i, v) => { const n = [...vals]; n[i] = Number(v); setVals(n); setTried(false); setAllGood(false); };
+  const submit = () => {
+    const ok = clue.sliders.every((s, i) => Math.abs(vals[i] - s.answer) <= clue.tolerance);
+    if (ok) { setAllGood(true); setTimeout(onCorrect, 650); } else setTried(true);
+  };
+  return (
+    <div>
+      {clue.sliders.map((s, i) => (
+        <div key={i} style={{ marginBottom:"28px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"10px" }}>
+            <Mono size={12} spacing="0.1em">{s.label}</Mono>
+            <Mono size={16} color="var(--accent)" spacing="0.05em" style={{ fontWeight:400 }}>{vals[i]}{s.unit}</Mono>
+          </div>
+          <input type="range" min={mn} max={mx} value={vals[i]} onChange={e=>setVal(i, e.target.value)}/>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:"5px" }}>
+            <Mono size={10} spacing="0" style={{ opacity:0.35 }}>{mn}°C</Mono>
+            <Mono size={10} spacing="0" style={{ opacity:0.35 }}>{mx}°C</Mono>
+          </div>
+        </div>
+      ))}
+      <GhostBtn onClick={submit} borderColor={allGood?"var(--green)":"var(--border)"} color={allGood?"var(--green)":"var(--muted)"}>{allGood?"✓ Correct":"Set temperatures"}</GhostBtn>
+      {tried && !allGood && <div style={{ marginTop:"12px", animation:"fadeIn 0.3s ease" }}><Mono size={12} color="var(--red)">One or both are off. Adjust and try again.</Mono></div>}
+    </div>
+  );
+}
+function BuildingsClue({ clue, onCorrect, onLockout }) {
+  const [imgStep, setImgStep] = useState(0); const [val, setVal] = useState(""); const [shake, setShake] = useState(false);
+  const [wrongImg, setWrongImg] = useState(false); const [phase, setPhase] = useState("images");
+  const shuffled = useMemo(() => shuffle(clue.commonOptions), []);
+  const submitImg = () => {
+    if (!val.trim()) return;
+    const img = clue.images[imgStep];
+    if (img.check(val)) { setVal(""); if (imgStep + 1 >= clue.images.length) setPhase("common"); else setImgStep(s => s + 1); }
+    else { setWrongImg(true); setShake(true); setTimeout(() => { setShake(false); setWrongImg(false); }, 850); setVal(""); }
+  };
+  const submitCommon = opt => { if (opt === clue.commonAnswer) setTimeout(onCorrect, 650); else setTimeout(onLockout, 300); };
+  if (phase === "images") {
+    const img = clue.images[imgStep];
+    return (
+      <div key={imgStep} style={{ animation:"fadeUp 0.4s ease" }}>
+        <div style={{ marginBottom:"10px" }}><Mono size={11} spacing="0.15em" style={{ textTransform:"uppercase" }}>{img.label}</Mono></div>
+        <div style={{ width:"100%", height:"200px", background:"var(--border)", marginBottom:"16px", overflow:"hidden" }}>
+          <img src={img.url} alt="Identify this building" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} onError={e=>{e.target.style.display="none";}}/>
+        </div>
+        <StyledInput value={val} onChange={setVal} onSubmit={submitImg} placeholder="Name this building or landmark…" shake={shake}/>
+        <div style={{ display:"flex", gap:"16px", alignItems:"center", marginTop:"8px", flexWrap:"wrap" }}>
+          <GhostBtn onClick={submitImg}>Submit</GhostBtn>
+          {wrongImg && <Mono size={12} color="var(--red)">Not right — try again.</Mono>}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ animation:"fadeUp 0.5s ease" }}>
+      <div style={{ fontSize:"18px", fontStyle:"italic", lineHeight:1.7, color:"var(--fg)", marginBottom:"16px", fontWeight:300 }}>Good. What do all five of those places have in common?</div>
+      <div style={{ marginBottom:"14px", padding:"10px 14px", border:"1px solid rgba(200,72,72,0.3)", background:"rgba(200,72,72,0.04)" }}>
+        <Mono size={11} color="var(--red)" spacing="0.1em">Wrong answer = 15 minute wait.</Mono>
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:"8px", maxHeight:"420px", overflowY:"auto", paddingRight:"4px" }}>
+        {shuffled.map((opt, i) => (
+          <button key={i} onClick={() => submitCommon(opt)}
+            style={{ background:"transparent", border:"1px solid var(--border)", color:"var(--fg)", fontFamily:"var(--serif)", fontSize:"15px", fontWeight:300, padding:"10px 14px", textAlign:"left", cursor:"pointer", transition:"all 0.15s", lineHeight:1.5 }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--accent)";e.currentTarget.style.background="var(--adim)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.background="transparent";}}
+          >{opt}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SCREENS
+// ════════════════════════════════════════════════════════════════
+
+// ── START ─────────────────────────────────────────────────────
+function StartScreen({ onStart }) {
+  const [fading, setFading] = useState(false);
+  const handle = () => { setFading(true); setTimeout(onStart, 900); };
+  return (
+    <div style={{ minHeight:"100vh", background:"#ffffff", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", position:"relative", overflow:"hidden", fontFamily:"var(--mono)" }}>
+      {/* black fade */}
+      <div style={{ position:"fixed", inset:0, background:"#000", opacity:fading?1:0, transition:fading?"opacity 0.78s cubic-bezier(0.4,0,0.9,1)":"none", zIndex:10, pointerEvents:"none" }}/>
+      <div style={{ textAlign:"center", animation:"fadeIn 1s ease" }}>
+        <div style={{ fontSize:"10px", letterSpacing:"0.44em", color:"#bbb", marginBottom:"68px", textTransform:"uppercase" }}>
+          ShockDave: Unlock the Gift
+        </div>
+        <button onClick={handle} disabled={fading}
+          style={{ background:"none", border:"none", cursor:fading?"default":"pointer", fontFamily:"var(--mono)", fontSize:"12px", letterSpacing:"0.52em", textTransform:"uppercase", color:"#26763a", padding:"18px 52px", transition:"letter-spacing 0.32s ease, opacity 0.2s", opacity:fading?0.3:1 }}
+          onMouseEnter={e=>{ if(!fading) e.currentTarget.style.letterSpacing="0.7em"; }}
+          onMouseLeave={e=>{ if(!fading) e.currentTarget.style.letterSpacing="0.52em"; }}
+        >START</button>
+        <div style={{ width:"1px", height:"52px", background:"#e0e0e0", margin:"30px auto 0", animation:"pulse 2.2s ease infinite" }}/>
+      </div>
+    </div>
+  );
+}
+
+// ── INTRO ─────────────────────────────────────────────────────
+function IntroScreen({ onComplete }) {
+  const [phase, setPhase] = useState(0); // 0=dark 1=line1 2=line2 3=line3 4=btn
+  useEffect(() => {
+    const ts = [
+      setTimeout(() => setPhase(1), 500),
+      setTimeout(() => setPhase(2), 2900),
+      setTimeout(() => setPhase(3), 5700),
+      setTimeout(() => setPhase(4), 7900),
+    ];
+    return () => ts.forEach(clearTimeout);
+  }, []);
+  const line = { fontFamily:"var(--serif)", fontWeight:300, animation:"introLine 1.15s cubic-bezier(0.16,1,0.3,1) both" };
+  return (
+    <div style={{ minHeight:"100vh", background:"#000", display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 24px" }}>
+      <div style={{ maxWidth:"440px", width:"100%", textAlign:"center" }}>
+        {phase >= 1 && <div style={{ ...line, fontSize:"58px", lineHeight:1.12, marginBottom:"28px", letterSpacing:"-0.01em", color:"var(--fg)" }}>Hello David</div>}
+        {phase >= 2 && <div style={{ ...line, fontSize:"20px", fontStyle:"italic", color:"rgba(237,232,221,0.62)", lineHeight:1.82, marginBottom:"38px" }}>you've worked so hard on yourself lately</div>}
+        {phase >= 3 && <div style={{ ...line, fontSize:"34px", color:"var(--accent)", lineHeight:1.3, marginBottom:"62px" }}>Wanna play a game?</div>}
+        {phase >= 4 && (
+          <div style={{ animation:"fadeUp 0.95s ease both" }}>
+            <button
+              onClick={() => { setPhase(5); setTimeout(onComplete, 620); }}
+              style={{ background:"transparent", border:"1px solid var(--accent)", color:"var(--accent)", fontFamily:"var(--mono)", fontSize:"11px", letterSpacing:"0.3em", padding:"15px 44px", cursor:"pointer", textTransform:"uppercase", transition:"all 0.2s" }}
+              onMouseEnter={e=>{ e.currentTarget.style.background="var(--adim)"; e.currentTarget.style.letterSpacing="0.42em"; }}
+              onMouseLeave={e=>{ e.currentTarget.style.background="transparent"; e.currentTarget.style.letterSpacing="0.3em"; }}
+            >Begin the Journey →</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── PASSWORD ──────────────────────────────────────────────────
+function PasswordScreen({ onSuccess, sitePassword }) {
+  const [val, setVal] = useState(""); const [shake, setShake] = useState(false); const [vis, setVis] = useState(false);
+  useEffect(() => { setTimeout(() => setVis(true), 80); }, []);
+  const submit = () => {
+    if (val.toLowerCase().trim() === sitePassword.toLowerCase()) { onSuccess(); return; }
+    setShake(true); setVal(""); setTimeout(() => setShake(false), 420);
+  };
+  return (
+    <Shell>
+      <div style={{ opacity:vis?1:0, transform:vis?"none":"translateY(18px)", transition:"opacity 0.9s ease, transform 0.9s ease", textAlign:"center" }}>
+        <Mono size={11} spacing="0.35em" style={{ display:"block", marginBottom:"52px", textTransform:"uppercase" }}>ShockDave: Unlock the Gift</Mono>
+        <div style={{ fontSize:"44px", fontWeight:300, lineHeight:1.25, letterSpacing:"-0.01em", marginBottom:"10px" }}>
+          Something is<br/><em style={{ fontStyle:"italic", fontWeight:300 }}>waiting for you.</em>
+        </div>
+        <Divider my={28}/>
+        <div style={{ fontSize:"16px", color:"var(--muted)", lineHeight:1.82, marginBottom:"44px" }}>You were given a password.<br/>Enter it below to begin.</div>
+        <div className={shake?"shake":""}>
+          <input type="password" value={val} onChange={e=>setVal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder="password" autoFocus
+            style={{ width:"100%", background:"transparent", border:"none", borderBottom:"1px solid var(--border)", color:"var(--fg)", fontFamily:"var(--mono)", fontSize:"18px", padding:"14px 0", textAlign:"center", letterSpacing:"0.4em", outline:"none" }}
+            onFocus={e=>e.target.style.borderBottomColor="var(--accent)"} onBlur={e=>e.target.style.borderBottomColor="var(--border)"}/>
+        </div>
+        <div style={{ marginTop:"32px" }}><GhostBtn onClick={submit}>Enter</GhostBtn></div>
+      </div>
+    </Shell>
+  );
+}
+
+// ── CLUE ──────────────────────────────────────────────────────
+function ClueScreen({ clue, onSolved, onLockout }) {
+  const [vis, setVis] = useState(false);
+  useEffect(() => { setTimeout(() => setVis(true), 60); }, [clue.id]);
+  const input = () => {
+    switch (clue.type) {
+      case "text":      return <TextClue      clue={clue} onCorrect={onSolved} onLockout={onLockout}/>;
+      case "choice":    return <ChoiceClue    clue={clue} onCorrect={onSolved}/>;
+      case "slider":    return <SliderClue    clue={clue} onCorrect={onSolved}/>;
+      case "buildings": return <BuildingsClue clue={clue} onCorrect={onSolved} onLockout={onLockout}/>;
+      default: return null;
+    }
+  };
+  return (
+    <Shell center={false}>
+      <div style={{ paddingTop:"24px", opacity:vis?1:0, transform:vis?"none":"translateY(16px)", transition:"opacity 0.6s ease, transform 0.6s ease" }}>
+        <ClueNum id={clue.id}/>
+        {clue.quote && (
+          <div style={{ fontSize:"22px", fontStyle:"italic", fontWeight:300, lineHeight:1.72, color:"var(--fg)", marginBottom:"20px", paddingLeft:"18px", borderLeft:"2px solid var(--border)" }}>
+            "{clue.quote}"
+          </div>
+        )}
+        <div style={{ fontSize:clue.quote?"17px":"22px", lineHeight:1.72, fontWeight:300, color:clue.quote?"var(--muted)":"var(--fg)", marginBottom:"32px", whiteSpace:"pre-line" }}>
+          {clue.question}
+        </div>
+        {input()}
+      </div>
+    </Shell>
+  );
+}
+
+// ── SUCCESS ───────────────────────────────────────────────────
+function SuccessScreen({ clue, onContinue }) {
+  const [phase, setPhase] = useState(0);
+  useEffect(() => { const t1=setTimeout(()=>setPhase(1),400), t2=setTimeout(onContinue,3200); return()=>{clearTimeout(t1);clearTimeout(t2);}; }, []);
+  return (
+    <Shell>
+      <div style={{ textAlign:"center" }}>
+        <div style={{ fontSize:"36px", color:"var(--accent)", marginBottom:"16px", animation:"fadeIn 0.4s ease" }}>✓</div>
+        <Mono size={11} color="var(--muted)" spacing="0.3em" style={{ display:"block", textTransform:"uppercase", marginBottom:"20px", animation:"fadeIn 0.5s 0.2s ease both" }}>Correct</Mono>
+        {phase >= 1 && <div style={{ fontSize:"24px", fontStyle:"italic", fontWeight:300, lineHeight:1.6, animation:"fadeUp 0.5s ease" }}>{clue.flavor}</div>}
+      </div>
+    </Shell>
+  );
+}
+
+// ── COUNTDOWN ─────────────────────────────────────────────────
+function CountdownScreen({ nextTs, onUnlock }) {
+  const t = useNow(500); const remaining = Math.max(0, nextTs - t);
+  useEffect(() => { if (remaining <= 0) onUnlock(); }, [remaining]);
+  return (
+    <Shell>
+      <div style={{ textAlign:"center", animation:"fadeUp 0.6s ease" }}>
+        <Mono size={11} spacing="0.3em" style={{ display:"block", textTransform:"uppercase", marginBottom:"36px" }}>Next clue unlocks in</Mono>
+        <div style={{ fontFamily:"var(--mono)", fontSize:"52px", fontWeight:300, color:"var(--accent)", letterSpacing:"0.06em", animation:"pulse 2.5s ease infinite" }}>{fmtMs(remaining)}</div>
+        <Divider my={40}/>
+        <div style={{ fontSize:"17px", fontStyle:"italic", color:"var(--muted)", lineHeight:1.82 }}>Come back when you're ready.<br/>It'll be here.</div>
+      </div>
+    </Shell>
+  );
+}
+
+// ── LOCKOUT ───────────────────────────────────────────────────
+function LockoutScreen({ until, onDone }) {
+  const t = useNow(500); const remaining = Math.max(0, until - t);
+  useEffect(() => { if (remaining <= 0) onDone(); }, [remaining]);
+  return (
+    <Shell>
+      <div style={{ textAlign:"center", animation:"fadeUp 0.4s ease" }}>
+        <div style={{ marginBottom:"32px" }}><Mono size={11} color="var(--red)" spacing="0.3em" style={{ textTransform:"uppercase" }}>Not right.</Mono></div>
+        <div style={{ fontFamily:"var(--mono)", fontSize:"52px", fontWeight:300, color:"var(--red)", letterSpacing:"0.06em", opacity:0.75 }}>{fmtMs(remaining)}</div>
+        <Divider my={36}/>
+        <div style={{ fontSize:"18px", fontStyle:"italic", color:"var(--muted)", lineHeight:1.82 }}>Take a moment.<br/>Think it over.<br/>Come back when the timer ends.</div>
+      </div>
+    </Shell>
+  );
+}
+
+// ── REVEAL ────────────────────────────────────────────────────
+function RevealScreen() {
+  const [step, setStep] = useState(0);
+  const [phase, setPhase] = useState("lines"); // lines → bridge → message → gift
+  const [confetti, setConfetti] = useState(false);
+
+  useEffect(() => {
+    if (phase === "lines") {
+      if (step < REVEAL_PAIRS.length) { const t = setTimeout(() => setStep(s => s + 1), 840); return () => clearTimeout(t); }
+      else { const t = setTimeout(() => setPhase("bridge"), 1300); return () => clearTimeout(t); }
+    }
+    if (phase === "bridge")  { const t = setTimeout(() => setPhase("message"), 2900); return () => clearTimeout(t); }
+    if (phase === "message") { const t = setTimeout(() => setPhase("gift"), 2900); return () => clearTimeout(t); }
+    if (phase === "gift")    { const t = setTimeout(() => setConfetti(true), 900); return () => clearTimeout(t); }
+  }, [step, phase]);
+
+  return (
+    <>
+      <ConfettiCannon active={confetti}/>
+      <Shell center={false}>
+        <div style={{ paddingTop:"32px" }}>
+          {phase === "lines" && (
+            <div style={{ animation:"fadeIn 0.6s ease" }}>
+              <Mono size={11} spacing="0.25em" style={{ display:"block", textTransform:"uppercase", marginBottom:"40px", textAlign:"center" }}>Let's look at what you found.</Mono>
+              <div style={{ display:"flex", flexDirection:"column", gap:"18px" }}>
+                {REVEAL_PAIRS.slice(0, step).map(([a, b], i) => (
+                  <div key={i} style={{ animation:"slideIn 0.4s ease", borderLeft:"2px solid var(--accent)", paddingLeft:"16px" }}>
+                    <div style={{ fontSize:"18px", fontWeight:400, color:"var(--fg)", lineHeight:1.4 }}>{a}</div>
+                    <Mono size={11} color="var(--muted)" spacing="0.05em" style={{ display:"block", marginTop:"3px", lineHeight:1.65 }}>{b}</Mono>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {phase === "bridge" && (
+            <div style={{ textAlign:"center", animation:"fadeIn 0.95s ease", paddingTop:"64px" }}>
+              <div style={{ fontSize:"28px", fontStyle:"italic", fontWeight:300, lineHeight:1.68, color:"var(--fg)" }}>
+                You've done a lot of thinking<br/>for someone who just needs to stop.
+              </div>
+            </div>
+          )}
+
+          {phase === "message" && (
+            <div style={{ textAlign:"center", animation:"fadeIn 0.95s ease", paddingTop:"64px" }}>
+              <div style={{ fontSize:"30px", fontStyle:"italic", fontWeight:300, lineHeight:1.68, color:"var(--fg)", marginBottom:"28px" }}>
+                Here's $350 to finally<br/>do something about that.
+              </div>
+              <Divider my={24}/>
+              <Mono size={13} spacing="0.18em">— Tim</Mono>
+            </div>
+          )}
+
+          {phase === "gift" && (
+            <div style={{ animation:"fadeUp 0.85s ease", position:"relative", zIndex:10 }}>
+              {/* Reprise message */}
+              <div style={{ textAlign:"center", marginBottom:"36px" }}>
+                <div style={{ fontSize:"28px", fontStyle:"italic", fontWeight:300, lineHeight:1.68, marginBottom:"20px" }}>
+                  Here's $350 to finally<br/>do something about that.
+                </div>
+                <Divider my={20}/>
+                <Mono size={13} spacing="0.18em">— Tim</Mono>
+              </div>
+
+              {/* Gift card */}
+              <div style={{ border:"1px solid var(--border)", padding:"38px 30px", textAlign:"center", animation:"glow 1.6s ease forwards", background:"var(--bg2)" }}>
+                <Mono size={10} color="var(--accent)" spacing="0.32em" style={{ display:"block", marginBottom:"20px", textTransform:"uppercase" }}>Your Gift</Mono>
+
+                <div style={{ fontSize:"40px", fontWeight:300, letterSpacing:"-0.01em", marginBottom:"4px" }}>Sense of Self</div>
+                <div style={{ fontSize:"15px", color:"var(--muted)", fontStyle:"italic", marginBottom:"30px" }}>Collingwood, Melbourne</div>
+
+                {/* Voucher detail card */}
+                <div style={{ border:"1px solid rgba(200,164,90,0.2)", padding:"22px 20px", marginBottom:"26px", background:"rgba(200,164,90,0.04)" }}>
+                  <Mono size={9} color="var(--muted)" spacing="0.32em" style={{ display:"block", marginBottom:"10px", textTransform:"uppercase" }}>Voucher Code</Mono>
+                  <div style={{ fontFamily:"var(--mono)", fontSize:"20px", color:"var(--accent)", letterSpacing:"0.2em", marginBottom:"20px", wordBreak:"break-all" }}>
+                    UJOBLHPQOBPJ
+                  </div>
+                  <div style={{ display:"flex", justifyContent:"space-between", paddingTop:"16px", borderTop:"1px solid var(--border)" }}>
+                    <div style={{ textAlign:"left" }}>
+                      <Mono size={9} color="var(--muted)" spacing="0.22em" style={{ display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Value</Mono>
+                      <Mono size={18} color="var(--fg)" spacing="0.04em" style={{ fontWeight:400 }}>A$350.00</Mono>
+                    </div>
+                    <div style={{ textAlign:"right" }}>
+                      <Mono size={9} color="var(--muted)" spacing="0.22em" style={{ display:"block", marginBottom:"6px", textTransform:"uppercase" }}>Expires</Mono>
+                      <Mono size={14} color="var(--fg)" spacing="0.04em">5 Apr 2029</Mono>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize:"16px", color:"var(--muted)", lineHeight:1.9, marginBottom:"34px" }}>
+                  A mineral pool. A Finnish sauna. A cold plunge.<br/>
+                  A Hammam. A massage. A robe and a towel.<br/>
+                  Or anything else. It's yours.<br/>
+                  <em>Take your time with it.</em>
+                </div>
+
+                <a href="https://www.sos-senseofself.com/" target="_blank" rel="noopener noreferrer"
+                  style={{ display:"inline-block", border:"1px solid var(--accent)", color:"var(--accent)", fontFamily:"var(--mono)", fontSize:"12px", letterSpacing:"0.2em", padding:"13px 34px", textDecoration:"none", textTransform:"uppercase", transition:"all 0.2s" }}
+                  onMouseEnter={e=>e.currentTarget.style.background="var(--adim)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                >Book now →</a>
+              </div>
+            </div>
+          )}
+        </div>
+      </Shell>
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  ADMIN PANEL
+// ════════════════════════════════════════════════════════════════
+const STATUS_COL = { solved:"#5a9e6a", active:"#c8a45a", upcoming:"#3a3330", disabled:"#c84848" };
+
+function AdminPanel({ open, onClose, gameState, onAction }) {
+  const [authed, setAuthed]   = useState(false);
+  const [pw, setPw]           = useState("");
+  const [pwShake, setPwShake] = useState(false);
+  const [tab, setTab]         = useState("progress");
+  // Local timer inputs
+  const [iH, setIH] = useState(() => Math.floor((LS.get("timers",{}).intervalMs ?? BASE.defaultInterval) / 3600000));
+  const [iM, setIM] = useState(() => Math.floor(((LS.get("timers",{}).intervalMs ?? BASE.defaultInterval) % 3600000) / 60000));
+  const [lM, setLM] = useState(() => Math.floor((LS.get("timers",{}).lockoutMs ?? BASE.defaultLockout) / 60000));
+  const [lS, setLS_] = useState(() => Math.floor(((LS.get("timers",{}).lockoutMs ?? BASE.defaultLockout) % 60000) / 1000));
+
+  useEffect(() => { if (!open) { setAuthed(false); setPw(""); } }, [open]);
+  if (!open) return null;
+
+  // — Password gate —
+  if (!authed) {
+    const checkPw = () => {
+      if (pw === "asdf") { setAuthed(true); return; }
+      setPwShake(true); setPw(""); setTimeout(() => setPwShake(false), 400);
+    };
+    return (
+      <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.9)", zIndex:9600, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)" }}>
+        <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", padding:"40px 32px", maxWidth:"320px", width:"90%", animation:"scaleIn 0.25s ease" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"28px" }}>
+            <Mono size={12} color="var(--accent)" spacing="0.2em">ADMIN ACCESS</Mono>
+            <button onClick={onClose} style={{ background:"none", border:"none", color:"var(--muted)", cursor:"pointer", fontSize:"22px", lineHeight:1 }}>×</button>
+          </div>
+          <div className={pwShake?"shake":""}>
+            <input type="password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&checkPw()} placeholder="admin password" autoFocus
+              style={{ width:"100%", background:"transparent", border:"none", borderBottom:"1px solid var(--border)", color:"var(--fg)", fontFamily:"var(--mono)", fontSize:"15px", padding:"10px 0", textAlign:"center", letterSpacing:"0.3em", outline:"none" }}
+              onFocus={e=>e.target.style.borderBottomColor="var(--accent)"} onBlur={e=>e.target.style.borderBottomColor="var(--border)"}/>
+          </div>
+          <div style={{ marginTop:"24px", textAlign:"center" }}><GhostBtn onClick={checkPw}>Unlock</GhostBtn></div>
+        </div>
+      </div>
+    );
+  }
+
+  // — Panel —
+  const { solved, disabled, activeClueId, intervalMs, lockoutMs } = gameState;
+  const pct = Math.round((solved.length / CLUES.length) * 100);
+
+  const getStatus = c => {
+    if (solved.includes(c.id))    return "solved";
+    if (disabled.includes(c.id)) return "disabled";
+    if (c.id === activeClueId)   return "active";
+    return "upcoming";
+  };
+
+  const saveTimers = () => {
+    const ims = Math.max((Number(iH)*3600 + Number(iM)*60) * 1000, 1000);
+    const lms = Math.max((Number(lM)*60  + Number(lS)) * 1000, 1000);
+    LS.set("timers", { intervalMs:ims, lockoutMs:lms });
+    onAction("timersUpdated");
+  };
+
+  const nb = t => ({ background:tab===t?"var(--adim)":"transparent", border:`1px solid ${tab===t?"var(--accent)":"var(--border)"}`, color:tab===t?"var(--accent)":"var(--muted)", fontFamily:"var(--mono)", fontSize:"10px", letterSpacing:"0.14em", padding:"7px 14px", cursor:"pointer", textTransform:"uppercase", transition:"all 0.15s" });
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(5,4,2,0.97)", zIndex:9600, display:"flex", flexDirection:"column", animation:"fadeIn 0.2s ease" }}>
+
+      {/* Header */}
+      <div style={{ padding:"18px 24px 14px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+        <div>
+          <Mono size={13} color="var(--accent)" spacing="0.22em" style={{ display:"block", marginBottom:"5px" }}>SHOCKDAVE ADMIN</Mono>
+          <Mono size={10} spacing="0.06em">{solved.length}/{CLUES.length} complete · {pct}% · interval {fmtMs(intervalMs)} · lockout {fmtMs(lockoutMs)}</Mono>
+        </div>
+        <button onClick={onClose}
+          style={{ background:"transparent", border:"1px solid var(--border)", color:"var(--muted)", cursor:"pointer", fontFamily:"var(--mono)", fontSize:"10px", letterSpacing:"0.14em", padding:"8px 14px", transition:"all 0.15s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--accent)";e.currentTarget.style.color="var(--accent)";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--muted)";}}>
+          CLOSE ×
+        </button>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height:"2px", background:"var(--border)", flexShrink:0 }}>
+        <div style={{ height:"100%", width:`${pct}%`, background:"var(--accent)", transition:"width 0.4s ease" }}/>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ padding:"12px 24px", borderBottom:"1px solid var(--border)", display:"flex", gap:"8px", flexShrink:0 }}>
+        {["progress","settings","triggers"].map(t => <button key={t} onClick={()=>setTab(t)} style={nb(t)}>{t}</button>)}
+      </div>
+
+      {/* Body */}
+      <div className="admin-scroll" style={{ flex:1, overflowY:"auto", padding:"16px 24px 48px" }}>
+
+        {/* ── PROGRESS ── */}
+        {tab === "progress" && CLUES.map(clue => {
+          const st = getStatus(clue); const sc = STATUS_COL[st];
+          return (
+            <div key={clue.id} style={{ marginBottom:"9px", border:`1px solid ${st==="active"?"rgba(200,164,90,0.28)":"var(--border)"}`, background:st==="active"?"rgba(200,164,90,0.03)":"transparent", padding:"13px 15px" }}>
+              <div style={{ display:"flex", alignItems:"flex-start", gap:"10px" }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"5px" }}>
+                    <Mono size={10} color="var(--accent)" spacing="0.2em">{String(clue.id).padStart(2,"0")}</Mono>
+                    <div style={{ width:"6px", height:"6px", borderRadius:"50%", background:sc, flexShrink:0 }}/>
+                    <Mono size={9} color={sc} spacing="0.1em">{st.toUpperCase()}</Mono>
+                  </div>
+                  <div style={{ fontSize:"13px", fontFamily:"var(--serif)", color:"var(--fg)", fontWeight:300, marginBottom:"4px", lineHeight:1.4 }}>{clue.adminLabel}</div>
+                  <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", alignItems:"center" }}>
+                    <Mono size={9} spacing="0.04em" style={{ opacity:0.4 }}>ans:</Mono>
+                    <Mono size={9} color="var(--fg)" spacing="0.04em">{clue.adminAnswer}</Mono>
+                    <Mono size={9} spacing="0.04em" style={{ opacity:0.35 }}>· {clue.type}</Mono>
+                    {clue.lockout && <Mono size={9} color="var(--red)" spacing="0.04em">· ⚠ lockout</Mono>}
+                  </div>
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:"5px", flexShrink:0 }}>
+                  {st !== "solved" && (
+                    <button onClick={()=>onAction("markSolved",clue.id)}
+                      style={{ background:"transparent", border:`1px solid var(--green)`, color:"var(--green)", fontFamily:"var(--mono)", fontSize:"9px", letterSpacing:"0.1em", padding:"5px 10px", cursor:"pointer", whiteSpace:"nowrap" }}>
+                      ✓ SOLVE
+                    </button>
+                  )}
+                  {st === "solved" && (
+                    <button onClick={()=>onAction("unmarkSolved",clue.id)}
+                      style={{ background:"transparent", border:"1px solid var(--border)", color:"var(--muted)", fontFamily:"var(--mono)", fontSize:"9px", letterSpacing:"0.1em", padding:"5px 10px", cursor:"pointer" }}>
+                      RESET
+                    </button>
+                  )}
+                  {st !== "disabled" && st !== "solved" && (
+                    <button onClick={()=>onAction("disable",clue.id)}
+                      style={{ background:"transparent", border:"1px solid rgba(200,72,72,0.35)", color:"var(--red)", fontFamily:"var(--mono)", fontSize:"9px", letterSpacing:"0.1em", padding:"5px 10px", cursor:"pointer" }}>
+                      SKIP
+                    </button>
+                  )}
+                  {st === "disabled" && (
+                    <button onClick={()=>onAction("enable",clue.id)}
+                      style={{ background:"transparent", border:"1px solid var(--border)", color:"var(--muted)", fontFamily:"var(--mono)", fontSize:"9px", letterSpacing:"0.1em", padding:"5px 10px", cursor:"pointer" }}>
+                      ENABLE
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* ── SETTINGS ── */}
+        {tab === "settings" && (
+          <div>
+            <div style={{ marginBottom:"30px" }}>
+              <Mono size={11} color="var(--accent)" spacing="0.2em" style={{ display:"block", marginBottom:"14px" }}>CLUE INTERVAL</Mono>
+              <div style={{ display:"flex", gap:"12px", alignItems:"flex-end" }}>
+                {[["HOURS",iH,setIH,0,24],["MINS",iM,setIM,0,59]].map(([lbl,v,setter,mn,mx]) => (
+                  <div key={lbl}>
+                    <Mono size={9} style={{ display:"block", marginBottom:"7px", opacity:0.5 }}>{lbl}</Mono>
+                    <input type="number" min={mn} max={mx} value={v} onChange={e=>setter(e.target.value)}
+                      style={{ width:"72px", background:"var(--bg)", border:"1px solid var(--border)", color:"var(--fg)", fontFamily:"var(--mono)", fontSize:"20px", padding:"8px", outline:"none", textAlign:"center" }}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom:"30px" }}>
+              <Mono size={11} color="var(--accent)" spacing="0.2em" style={{ display:"block", marginBottom:"14px" }}>WRONG ANSWER LOCKOUT</Mono>
+              <div style={{ display:"flex", gap:"12px", alignItems:"flex-end" }}>
+                {[["MINS",lM,setLM,0,60],["SECS",lS,setLS_,0,59]].map(([lbl,v,setter,mn,mx]) => (
+                  <div key={lbl}>
+                    <Mono size={9} style={{ display:"block", marginBottom:"7px", opacity:0.5 }}>{lbl}</Mono>
+                    <input type="number" min={mn} max={mx} value={v} onChange={e=>setter(e.target.value)}
+                      style={{ width:"72px", background:"var(--bg)", border:"1px solid var(--border)", color:"var(--fg)", fontFamily:"var(--mono)", fontSize:"20px", padding:"8px", outline:"none", textAlign:"center" }}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <GhostBtn onClick={saveTimers} borderColor="var(--accent)" color="var(--accent)">Save Timers</GhostBtn>
+          </div>
+        )}
+
+        {/* ── TRIGGERS ── */}
+        {tab === "triggers" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+            {[
+              { label:"Test Intro",   desc:"Replay the full intro sequence without affecting progress.", action:"testIntro",  btn:"▶ Play Intro"  },
+              { label:"Test Reveal",  desc:"Jump directly to the gift reveal screen.",                  action:"testReveal", btn:"▶ Play Reveal" },
+            ].map(({ label,desc,action,btn }) => (
+              <div key={action} style={{ padding:"16px 18px", border:"1px solid var(--border)" }}>
+                <div style={{ fontSize:"15px", fontFamily:"var(--serif)", fontWeight:300, color:"var(--fg)", marginBottom:"6px" }}>{label}</div>
+                <Mono size={11} spacing="0.04em" style={{ display:"block", marginBottom:"14px", opacity:0.5, lineHeight:1.65 }}>{desc}</Mono>
+                <GhostBtn onClick={()=>{ onClose(); onAction(action); }}>{btn}</GhostBtn>
+              </div>
+            ))}
+            <div style={{ padding:"16px 18px", border:"1px solid rgba(200,72,72,0.25)", background:"rgba(200,72,72,0.025)" }}>
+              <div style={{ fontSize:"15px", fontFamily:"var(--serif)", fontWeight:300, color:"var(--red)", marginBottom:"6px" }}>Full Reset</div>
+              <Mono size={11} spacing="0.04em" style={{ display:"block", marginBottom:"14px", opacity:0.5, lineHeight:1.65 }}>Wipes all progress, timers and session data. Dave starts from scratch.</Mono>
+              <GhostBtn onClick={()=>onAction("reset")} color="var(--red)" borderColor="rgba(200,72,72,0.4)">⚠ Reset Everything</GhostBtn>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── COG BUTTON ────────────────────────────────────────────────
+function AdminCog({ onClick }) {
+  const [h, setH] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{ position:"fixed", bottom:"22px", right:"22px", width:"42px", height:"42px", borderRadius:"50%", background:h?"var(--bg2)":"rgba(10,8,5,0.87)", border:`1px solid ${h?"var(--accent)":"var(--border)"}`, cursor:"pointer", zIndex:8000, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)", transition:"border-color 0.2s, background 0.2s, transform 0.3s", transform:h?"rotate(65deg)":"rotate(0deg)" }}>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={h?"var(--accent)":"var(--muted)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+    </button>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MAIN APP
+// ════════════════════════════════════════════════════════════════
+export default function App() {
+
+  // Inject global CSS once
+  useEffect(() => {
+    const el = document.createElement("style");
+    el.textContent = GLOBAL_CSS;
+    document.head.appendChild(el);
+    return () => document.head.removeChild(el);
+  }, []);
+
+  // Dynamic timers (admin-configurable)
+  const [timers, setTimers] = useState(() => {
+    const t = LS.get("timers", {});
+    return { intervalMs: t.intervalMs ?? BASE.defaultInterval, lockoutMs: t.lockoutMs ?? BASE.defaultLockout };
+  });
+
+  // Screen + game state
+  const [screen,       setScreen]       = useState("boot");
+  const [startTs,      setStartTs]      = useState(null);
+  const [solved,       setSolved]       = useState([]);
+  const [disabled,     setDisabled]     = useState([]);
+  const [lockoutUntil, setLockoutUntil] = useState(null);
+  const [activeClueId, setActiveClueId] = useState(1);
+  const [queue,        setQueue]        = useState([]);
+
+  // Steam overlay
+  const [steam, setSteam] = useState(false);
+
+  // Admin
+  const [adminOpen, setAdminOpen] = useState(false);
+
+  // Steam helper — wraps screen changes in a particle wipe
+  const steamTo = useCallback((fn, delay = 480) => {
+    setSteam(true);
+    setTimeout(() => { fn(); setTimeout(() => setSteam(false), 650); }, delay);
+  }, []);
+
+  // Derive next screen from stored state
+  const restore = useCallback((ts, s, d, lu, lc, t) => {
+    const iv = t?.intervalMs ?? timers.intervalMs;
+    const active = CLUES.filter(c => !d.includes(c.id));
+    if (s.length >= active.length) { setScreen("reveal"); return; }
+    if (lu > now()) { setLockoutUntil(lu); setActiveClueId(lc || 1); setScreen("locked"); return; }
+    const unlocked = getUnlocked(ts, iv);
+    const pending  = buildPending(unlocked, s, d);
+    if (pending.length > 0) { const [first, ...rest] = pending; setActiveClueId(first); setQueue(rest); setScreen("clue"); }
+    else setScreen("countdown");
+  }, [timers.intervalMs]);
+
+  // Bootstrap — runs once on mount
+  useEffect(() => {
+    const introSeen = sessionStorage.getItem("dg_intro");
+    if (!introSeen) { setScreen("start"); return; }
+
+    const ts = LS.get("start");
+    if (!ts) { setScreen("password"); return; }
+
+    const s  = LS.get("solved",   []);
+    const d  = LS.get("disabled", []);
+    const lu = LS.get("lockout",  0);
+    const lc = LS.get("lockoutClue", 1);
+    const t  = LS.get("timers",   null);
+
+    setStartTs(ts); setSolved(s); setDisabled(d);
+    if (lu > now()) setLockoutUntil(lu);
+    restore(ts, s, d, lu, lc, t);
+  }, []);
+
+  // ── handlers ──────────────────────────────────────────────
+  const handleIntroComplete = useCallback(() => {
+    sessionStorage.setItem("dg_intro", "1");
+    const ts = LS.get("start");
+    if (!ts) { steamTo(() => setScreen("password")); return; }
+    const s  = LS.get("solved",   []);
+    const d  = LS.get("disabled", []);
+    const lu = LS.get("lockout",  0);
+    const lc = LS.get("lockoutClue", 1);
+    setStartTs(ts); setSolved(s); setDisabled(d);
+    steamTo(() => restore(ts, s, d, lu, lc, null));
+  }, [steamTo, restore]);
+
+  const handlePassword = useCallback(() => {
+    const ts = now();
+    LS.set("start", ts); LS.set("solved", []);
+    setStartTs(ts); setSolved([]); setActiveClueId(1); setQueue([]);
+    steamTo(() => setScreen("clue"));
+  }, [steamTo]);
+
+  const handleSolved = useCallback(() => {
+    const ns = [...solved, activeClueId];
+    setSolved(ns); LS.set("solved", ns);
+    const active = CLUES.filter(c => !disabled.includes(c.id));
+    if (ns.length >= active.length) { setScreen("reveal"); return; }
+    setScreen("success");
+  }, [solved, activeClueId, disabled]);
+
+  const handleLockout = useCallback(() => {
+    const until = now() + timers.lockoutMs;
+    LS.set("lockout", until); LS.set("lockoutClue", activeClueId);
+    setLockoutUntil(until);
+    steamTo(() => setScreen("locked"), 320);
+  }, [activeClueId, timers.lockoutMs, steamTo]);
+
+  const handleSuccessDone = useCallback(() => {
+    const cs    = LS.get("solved", []);
+    const active = CLUES.filter(c => !disabled.includes(c.id));
+    if (cs.length >= active.length) { setScreen("reveal"); return; }
+    if (queue.length > 0) { const [next, ...rest] = queue; setActiveClueId(next); setQueue(rest); setScreen("clue"); return; }
+    const unlocked = getUnlocked(startTs, timers.intervalMs);
+    if (unlocked > cs.length) { setActiveClueId(cs.length + 1); setScreen("clue"); }
+    else setScreen("countdown");
+  }, [queue, startTs, timers.intervalMs, disabled]);
+
+  const handleLockoutDone     = useCallback(() => { setLockoutUntil(null); LS.del("lockout"); setScreen("clue"); }, []);
+  const handleCountdownUnlock = useCallback(() => {
+    const ts      = startTs || LS.get("start");
+    const s       = LS.get("solved",   []);
+    const d       = LS.get("disabled", []);
+    const pending = buildPending(getUnlocked(ts, timers.intervalMs), s, d);
+    if (pending.length > 0) { const [first, ...rest] = pending; setActiveClueId(first); setQueue(rest); steamTo(() => setScreen("clue")); }
+  }, [startTs, timers.intervalMs, steamTo]);
+
+  // ── admin actions ──────────────────────────────────────────
+  const handleAdminAction = useCallback((action, payload) => {
+    if (action === "markSolved") {
+      const ns = [...new Set([...solved, payload])].sort((a,b)=>a-b);
+      setSolved(ns); LS.set("solved", ns);
+      const d = LS.get("disabled", []);
+      const active = CLUES.filter(c => !d.includes(c.id));
+      if (ns.length >= active.length) { setScreen("reveal"); }
+      else { const nxt = CLUES.find(c => !ns.includes(c.id) && !d.includes(c.id))?.id ?? 1; setActiveClueId(nxt); setQueue([]); }
+    }
+    if (action === "unmarkSolved") { const ns = solved.filter(id=>id!==payload); setSolved(ns); LS.set("solved", ns); }
+    if (action === "disable")  { const nd = [...new Set([...disabled, payload])]; setDisabled(nd); LS.set("disabled", nd); }
+    if (action === "enable")   { const nd = disabled.filter(id=>id!==payload); setDisabled(nd); LS.set("disabled", nd); }
+    if (action === "testIntro")  { steamTo(() => setScreen("intro")); }
+    if (action === "testReveal") { steamTo(() => setScreen("reveal")); }
+    if (action === "reset") {
+      LS.clear();
+      setScreen("start"); setStartTs(null); setSolved([]); setDisabled([]);
+      setActiveClueId(1); setQueue([]); setLockoutUntil(null);
+    }
+    if (action === "timersUpdated") {
+      const t = LS.get("timers", {});
+      setTimers({ intervalMs: t.intervalMs ?? BASE.defaultInterval, lockoutMs: t.lockoutMs ?? BASE.defaultLockout });
+    }
+  }, [solved, disabled, steamTo]);
+
+  // ── derived values ─────────────────────────────────────────
+  const nextUnlockTs = startTs ? startTs + solved.length * timers.intervalMs : null;
+  const activeClue   = CLUES.find(c => c.id === activeClueId);
+  const showCog      = !["start","intro"].includes(screen);
+
+  return (
+    <>
+      <SteamOverlay active={steam}/>
+
+      {screen === "start"     && <StartScreen  onStart={()=>setTimeout(()=>setScreen("intro"),950)}/>}
+      {screen === "intro"     && <IntroScreen  onComplete={handleIntroComplete}/>}
+      {screen === "password"  && <PasswordScreen onSuccess={handlePassword} sitePassword={BASE.sitePassword}/>}
+      {screen === "clue"      && activeClue && <ClueScreen     clue={activeClue}  onSolved={handleSolved}        onLockout={handleLockout}/>}
+      {screen === "success"   && activeClue && <SuccessScreen  clue={activeClue}  onContinue={handleSuccessDone}/>}
+      {screen === "countdown" && nextUnlockTs && <CountdownScreen nextTs={nextUnlockTs} onUnlock={handleCountdownUnlock}/>}
+      {screen === "locked"    && lockoutUntil  && <LockoutScreen  until={lockoutUntil}  onDone={handleLockoutDone}/>}
+      {screen === "reveal"    && <RevealScreen/>}
+
+      {showCog && <AdminCog onClick={()=>setAdminOpen(true)}/>}
+      <AdminPanel
+        open={adminOpen}
+        onClose={()=>setAdminOpen(false)}
+        gameState={{ solved, disabled, activeClueId, startTs, lockoutUntil, intervalMs:timers.intervalMs, lockoutMs:timers.lockoutMs }}
+        onAction={handleAdminAction}
+      />
+    </>
+  );
+}
