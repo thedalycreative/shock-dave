@@ -65,20 +65,20 @@ export const CLUES = [
     type: "buildings_tiles",
     question: "Name each of these five buildings or structures and where they are located.",
     images: [
-      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Tate_Modern_from_the_south.jpg/640px-Tate_Modern_from_the_south.jpg", name: "Tate Modern", city: "London" },
-      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Mus%C3%A9e_d%27Orsay_2014%28cropped%29.jpg/640px-Mus%C3%A9e_d%27Orsay_2014%28cropped%29.jpg", name: "Musée d'Orsay", city: "Paris" },
-      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/High_Line_-_Section_2_opening.jpg/640px-High_Line_-_Section_2_opening.jpg", name: "The High Line", city: "New York" },
-      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Battersea_Power_Station_from_the_north.jpg/640px-Battersea_Power_Station_from_the_north.jpg", name: "Battersea Power Station", city: "London" },
-      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Wien_-_Gasometer_%28Au%C3%9Fenansicht%29.jpg/640px-Wien_-_Gasometer_%28Au%C3%9Fenansicht%29.jpg", name: "Gasometer", city: "Vienna" }
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Acropolis_in_Athens%2C_Greece.jpg/640px-Acropolis_in_Athens%2C_Greece.jpg", name: "Acropolis of Athens", city: "Athens" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Chichen_Itza_El_Castillo%2C_Mexico.jpg/640px-Chichen_Itza_El_Castillo%2C_Mexico.jpg", name: "El Castillo", city: "Chichén Itzá" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Taj_Mahal_in_March_2004.jpg/640px-Taj_Mahal_in_March_2004.jpg", name: "Taj Mahal", city: "Agra" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Petra_Jordan_BW_25.JPG/640px-Petra_Jordan_BW_25.JPG", name: "The Treasury", city: "Petra" },
+      { url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Angkor_Wat_temple.jpg/640px-Angkor_Wat_temple.jpg", name: "Angkor Wat", city: "Siem Reap" }
     ],
     tiles: [
-      "Tate Modern", "Musée d'Orsay", "The High Line", "Battersea Power Station", "Gasometer",
-      "London", "Paris", "New York", "London", "Vienna"
+      "Acropolis of Athens", "El Castillo", "Taj Mahal", "The Treasury", "Angkor Wat",
+      "Athens", "Chichén Itzá", "Agra", "Petra", "Siem Reap"
     ],
-    hint: "They're all famous. One is in New York, three in Europe, one in Vienna.",
-    flavor: "They're all famous landmarks with new lives.",
+    hint: "Each is an iconic work of ancient ingenuity found across three continents.",
+    flavor: "Timeless landmarks that keep drawing curious travelers.",
     adminLabel: "5 Buildings tiles",
-    adminAnswer: "Tate, Orsay, High Line, Battersea, Gasometer",
+    adminAnswer: "Acropolis, El Castillo, Taj Mahal, Treasury, Angkor Wat",
   },
   {
     id: 6,
@@ -254,6 +254,94 @@ export const CLUES = [
     adminLabel: "Finland saunas",
     adminAnswer: "3.2 million",
   },
+  {
+    id: 19,
+    type: "choice",
+    question: "Which of these cities is widely considered the oldest continuously inhabited city in the world?",
+    options: [
+      "Rome", "Damascus", "Jerusalem", "Jericho", "Athens", "Sana'a", "Lisbon", "Beijing", "Kyoto", "Istanbul"
+    ],
+    answer: "Jericho",
+    hint: "It sits beside the Jordan River and has ruins older than 10,000 years.",
+    flavor: "Jericho. Whispered to be one of the very first settlements.",
+    adminLabel: "Oldest city",
+    adminAnswer: "Jericho",
+  },
+  {
+    id: 20,
+    type: "text",
+    question: "What Sanskrit word names the vital life force or breath that yoga aims to connect with?",
+    check: (v) => v.toLowerCase().trim() === "prana",
+    placeholder: "prana…",
+    hint: "It rhymes with 'sana' and flows through every breath.",
+    flavor: "Prana. The breath that carries intention.",
+    adminLabel: "Prana life force",
+    adminAnswer: "Prana",
+  },
+  {
+    id: 21,
+    type: "slider",
+    question: "Roughly what percentage of Earth's surface is covered by oceans?",
+    range: [0, 100],
+    answer: 71,
+    tolerance: 2,
+    unit: "%",
+    hint: "More than two-thirds, less than three-quarters.",
+    flavor: "71%. Water wraps the planet.",
+    adminLabel: "Ocean coverage",
+    adminAnswer: "71%",
+  },
+  {
+    id: 22,
+    type: "choice",
+    question: "Which composer wrote the piano piece 'Clair de Lune'?",
+    options: [
+      "Claude Debussy", "Frédéric Chopin", "Ludwig van Beethoven", "Béla Bartók", "Erik Satie", "Maurice Ravel",
+      "Camille Saint-Saëns", "Igor Stravinsky", "Philip Glass", "Aaron Copland"
+    ],
+    answer: "Claude Debussy",
+    hint: "The composer who painted moonlight with impressionist brushstrokes.",
+    flavor: "Debussy. Moonlight shimmering across the keys.",
+    adminLabel: "Clair de Lune",
+    adminAnswer: "Claude Debussy",
+  },
+  {
+    id: 23,
+    type: "selection_slots",
+    question: "A classic Negroni is made from three ingredients before it hits the rocks. Which ones?",
+    slots: 3,
+    options: ["Gin", "Campari", "Vermouth", "Orange peel", "Lemon juice", "Soda water", "Tonic", "Angostura bitters", "Sugar", "Prosecco"],
+    answers: ["Gin", "Campari", "Vermouth"],
+    hint: "Bitter, sweet, botanical. Stirred, then garnished.",
+    flavor: "Gin, Campari and vermouth. A bitter geometry in a glass.",
+    adminLabel: "Negroni ingredients",
+    adminAnswer: "Gin, Campari, Vermouth",
+  },
+  {
+    id: 24,
+    type: "numeral",
+    digits: 2,
+    question: "A right triangle has legs measuring 7 and 24. What is the length of the hypotenuse, rounded to the nearest whole number?",
+    answer: "25",
+    hint: "Pythagoras knew this triple well.",
+    flavor: "7-24-25. The hypotenuse stands tall.",
+    adminLabel: "Hypotenuse 7-24-25",
+    adminAnswer: "25",
+  },
+  {
+    id: 25,
+    type: "text",
+    question: "The ancient Greek aphorism inscribed in the Temple of Apollo at Delphi urges you to do what?",
+    check: (v) => {
+      const normalized = v.toLowerCase().replace(/[^a-z ]/g, '').trim();
+      return ["know thyself", "know yourself", "gnothi seauton"].includes(normalized);
+    },
+    placeholder: "know thyself…",
+    hint: "Two simple words, whispered over centuries.",
+    flavor: "Know thyself. The Oracle still hums this advice.",
+    adminLabel: "Delphi inscription",
+    adminAnswer: "Know thyself",
+  },
 ];
 
 export const REVEAL_PAIRS = [
@@ -275,4 +363,11 @@ export const REVEAL_PAIRS = [
   ["The hypocaust.", "Heat from below."],
   ["7,000 years of cotton.", "A single thread."],
   ["3.2 million saunas.", "Steam is life."],
+  ["Jericho.", "One of the oldest doors in the world."],
+  ["Prana.", "Breath that hums through the body."],
+  ["71% ocean.", "Water wraps the blue planet."],
+  ["Claude Debussy.", "Moonlight painted in sound."],
+  ["Gin, Campari & Vermouth.", "The Negroni's bitter geometry."],
+  ["25.", "Pythagoras gives it away."],
+  ["Know thyself.", "Delphi still whispers."],
 ];

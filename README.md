@@ -60,6 +60,10 @@
 1.  **Firebase**: Connect your project in `src/lib/firebase.js` using `.env` variables.
 2.  **Vercel**: Connect the GitHub repo; Ensure `VITE_` prefixed environment variables are added to the Vercel dashboard.
 
+### Functions build note
+
+Before you run `firebase deploy --only functions,firestore`, build the functions package locally with `npm --prefix functions run build`. The Firebase CLI’s bundled npm currently trips over `stdin` in this repo when it tries to run the build itself, so keeping the compiled `functions/lib` artifacts up-to-date on your machine before deployment avoids the error.
+
 ---
 
 *Built with intention by Tim.*

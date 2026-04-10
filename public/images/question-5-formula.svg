@@ -1,0 +1,6 @@
+<svg width="320" height="200" viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="200" rx="20" fill="#080705" />
+  <text x="30" y="80" fill="#f5f1eb" font-family="DM Mono" font-size="28">P = 2(L + W)</text>
+  <text x="30" y="130" fill="#c8a45a" font-family="DM Mono" font-size="24">350 = 2(13 + 24)</text>
+  <text x="30" y="170" fill="#c8a45a" font-family="DM Mono" font-size="18">Area = L × W</text>
+</svg>

@@ -266,6 +266,7 @@ export function NumberUnitInput({ clue, onCorrect }) {
 export function BuildingsTilesInput({ clue, onCorrect }) {
   const [placements, setPlacements] = useState(clue.images.map(() => ({ name: null, city: null })));
   const [selectedTile, setSelectedTile] = useState(null);
+  const [failedImages, setFailedImages] = useState([]);
   const cities = ["London", "Paris", "New York", "Vienna"];
 
   const selectTile = (val) => {
@@ -300,7 +301,22 @@ export function BuildingsTilesInput({ clue, onCorrect }) {
         {clue.images.map((img, i) => (
           <div key={i} className="flex gap-5 items-center bg-dg-adim/5 p-4 rounded-3xl border border-dg-border">
             <div className="w-20 h-20 rounded-2xl overflow-hidden border border-dg-border shrink-0">
-               <img src={img.url} className="w-full h-full object-cover" />
+               <div className="relative w-full h-full bg-dg-bg flex items-center justify-center overflow-hidden">
+                 {!failedImages.includes(i) && (
+                   <img
+                     src={img.url}
+                     className="w-full h-full object-cover"
+                     loading="lazy"
+                     alt={img.name}
+                     onError={() => setFailedImages(prev => (prev.includes(i) ? prev : [...prev, i]))}
+                   />
+                 )}
+                 {failedImages.includes(i) && (
+                   <div className="absolute inset-0 text-[10px] uppercase tracking-[0.2em] text-dg-muted flex items-center justify-center px-2 text-center">
+                     image unavailable
+                   </div>
+                 )}
+               </div>
             </div>
             <div className="flex flex-col gap-2 flex-1 min-w-0">
                <button onClick={() => place(i, 'name')} className={`h-10 border-b text-left px-2 font-serif text-[14px] transition-all cursor-pointer ${placements[i].name ? 'border-dg-accent text-dg-accent' : 'border-dg-border text-dg-muted opacity-40'}`}>
