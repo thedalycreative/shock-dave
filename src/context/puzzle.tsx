@@ -126,35 +126,34 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
     if (!isFirebaseEnabled || typeof window === 'undefined') return;
     const sessionDoc = doc(sessionsCollection, sessionId);
 
-    // Create the doc if it doesn't exist (merge won't overwrite existing data)
-    const cached = loadLocalProgress();
-    setDoc(sessionDoc, {
-      ...(cached ?? initialProgress),
-      sessionId,
-      lastUpdated: Date.now(),
-    }, { merge: true }).catch(() => {});
-
     const unsub = onSnapshot(sessionDoc, (snapshot) => {
-      if (!snapshot.exists()) return;
-      const data = snapshot.data() as SessionProgress;
-      // On first hydration, Firestore wins if it has newer data
-      // On subsequent updates, Firestore always wins (it's the source of truth)
-      setProgress((prev) => {
-        const merged = { ...prev, ...data };
-        // Use whichever is more recent
+      if (!snapshot.exists()) {
+        // Doc doesn't exist yet — create it from local state (first device ever)
         if (!firestoreHydrated.current) {
           firestoreHydrated.current = true;
-          // Firestore is newer or has more solved puzzles — use it
+          const cached = loadLocalProgress();
+          const seed = cached ?? initialProgress;
+          setDoc(sessionDoc, { ...seed, sessionId, lastUpdated: Date.now() }, { merge: true }).catch(() => {});
+        }
+        return;
+      }
+      const data = snapshot.data() as SessionProgress;
+      setProgress((prev) => {
+        if (!firestoreHydrated.current) {
+          firestoreHydrated.current = true;
+          // First hydration: whoever has MORE progress wins
           const firestoreSolved = Object.keys(data.solved ?? {}).length;
           const localSolved = Object.keys(prev.solved ?? {}).length;
-          if (data.lastUpdated >= prev.lastUpdated || firestoreSolved > localSolved) {
-            return merged;
+          if (firestoreSolved >= localSolved) {
+            // Firestore has equal or more progress — use it
+            return { ...prev, ...data };
           }
-          // Local is newer — push local to Firestore
+          // Local has more progress — push local to Firestore
           persistToFirestore(prev);
           return prev;
         }
-        return merged;
+        // Subsequent updates: Firestore is source of truth
+        return { ...prev, ...data };
       });
     }, (error) => {
       console.warn('Snapshot listener failed, using local state', error);
