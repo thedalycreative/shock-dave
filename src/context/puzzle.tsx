@@ -31,6 +31,7 @@ type AdminActions = {
   updatePuzzleTiming: (id: PuzzleId, timing: { cooldownMin?: number; penaltyBase?: number; penaltyIncrement?: number }) => void;
   togglePuzzle: (id: PuzzleId, enabled: boolean) => void;
   resetJourney: () => void;
+  saveAll: () => void;
 };
 
 interface PuzzleContextValue {
@@ -313,6 +314,9 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
     resetJourney: () => {
       setProgress({ ...initialProgress, sessionId, sessionStart: Date.now(), lastUpdated: Date.now() });
       persistSession({ ...initialProgress, sessionId, sessionStart: Date.now(), lastUpdated: Date.now() });
+    },
+    saveAll: () => {
+      persistSession({ ...progress, lastUpdated: Date.now() });
     },
   }), [sessionId]);
 

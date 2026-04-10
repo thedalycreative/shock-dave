@@ -1,11 +1,53 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { usePuzzleContext } from '../context/puzzle';
 import type { PuzzleId } from '../types/puzzle';
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  if (m > 0) return `${m}m`;
+  return `${seconds}s`;
+}
+
+function formatEta(totalSeconds: number): string {
+  const now = new Date();
+  const eta = new Date(now.getTime() + totalSeconds * 1000);
+
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const diffMs = eta.getTime() - now.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  const hour = eta.getHours();
+  let timeOfDay: string;
+  if (hour < 6) timeOfDay = 'early morning';
+  else if (hour < 12) timeOfDay = 'morning';
+  else if (hour < 14) timeOfDay = 'midday';
+  else if (hour < 17) timeOfDay = 'afternoon';
+  else if (hour < 21) timeOfDay = 'evening';
+  else timeOfDay = 'night';
+
+  if (diffHours < 1) return `in about ${Math.ceil(diffHours * 60)} minutes`;
+  if (diffHours < 2) return `in about ${Math.round(diffHours * 60)} minutes`;
+
+  const isToday = eta.getDate() === now.getDate() && eta.getMonth() === now.getMonth();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow = eta.getDate() === tomorrow.getDate() && eta.getMonth() === tomorrow.getMonth();
+
+  if (isToday) return `today, ${timeOfDay}`;
+  if (isTomorrow) return `tomorrow ${timeOfDay}`;
+  if (diffDays < 7) return `${days[eta.getDay()]} ${timeOfDay}`;
+  return `${Math.ceil(diffDays)} days from now`;
+}
 
 export function AdminModal() {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState('');
   const [authorized, setAuthorized] = useState(false);
+  const [saved, setSaved] = useState(false);
   const { puzzles, progress, adminActions, disabledPuzzles, puzzleTimingOverrides } = usePuzzleContext();
   const solvedCount = Object.keys(progress.solved).length;
   const hintsTotal = Object.values(progress.hintsUsed).reduce((a, c) => a + c, 0);
@@ -24,10 +66,22 @@ export function AdminModal() {
     return 'locked';
   };
 
-  const formatSeconds = (s: number) => {
-    if (s >= 3600) return `${Math.round(s / 60)}m`;
-    if (s >= 60) return `${Math.round(s / 60)}m`;
-    return `${s}s`;
+  // Calculate earliest possible finish: sum of cooldowns for all unsolved, enabled puzzles
+  const { totalCooldownSeconds, etaLabel } = useMemo(() => {
+    let total = 0;
+    for (const puzzle of puzzles) {
+      if (disabledPuzzles.has(puzzle.id)) continue;
+      if (progress.solved[puzzle.id]) continue;
+      const overrides = puzzleTimingOverrides[puzzle.id] ?? {};
+      total += overrides.cooldownMin ?? puzzle.cooldownMin;
+    }
+    return { totalCooldownSeconds: total, etaLabel: formatEta(total) };
+  }, [puzzles, disabledPuzzles, progress.solved, puzzleTimingOverrides]);
+
+  const handleSave = () => {
+    adminActions.saveAll();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   return (
@@ -46,7 +100,7 @@ export function AdminModal() {
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
           <div className="glass-panel border border-dg-border w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col relative">
-            {/* Header - always visible */}
+            {/* Header */}
             <div className="flex items-center justify-between p-6 pb-4 border-b border-dg-border shrink-0">
               <h3 className="text-[20px] font-serif font-light">Admin control center</h3>
               <button
@@ -80,11 +134,20 @@ export function AdminModal() {
                 </form>
               ) : (
                 <div className="space-y-6">
-                  {/* Stats row */}
-                  <div className="flex flex-wrap gap-4 text-[13px] text-dg-muted font-mono">
-                    <span>Solved: {solvedCount} / {puzzles.length}</span>
-                    <span>Incorrect: {attemptsTotal}</span>
-                    <span>Hints: {hintsTotal}</span>
+                  {/* Stats + ETA */}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-4 text-[13px] text-dg-muted font-mono">
+                      <span>Solved: {solvedCount} / {puzzles.length}</span>
+                      <span>Incorrect: {attemptsTotal}</span>
+                      <span>Hints: {hintsTotal}</span>
+                    </div>
+                    <div className="border border-dg-accent/30 rounded-xl p-4 bg-dg-accent/5">
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-dg-accent/70 mb-1">Earliest possible finish</p>
+                      <p className="text-[18px] font-serif text-dg-accent">{etaLabel}</p>
+                      <p className="text-[12px] text-dg-muted font-mono mt-1">
+                        {puzzles.length - solvedCount - disabledPuzzles.size} remaining &middot; {formatDuration(totalCooldownSeconds)} total cooldown
+                      </p>
+                    </div>
                   </div>
 
                   {/* Puzzle list */}
@@ -104,7 +167,7 @@ export function AdminModal() {
                             isDisabled ? 'border-dg-border/50 opacity-50' : 'border-dg-border'
                           }`}
                         >
-                          {/* Puzzle header row */}
+                          {/* Puzzle header */}
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-3 min-w-0">
                               <span className="text-[11px] uppercase tracking-[0.3em] text-dg-muted shrink-0">
@@ -112,7 +175,6 @@ export function AdminModal() {
                               </span>
                               <span className="text-[15px] font-serif truncate">{puzzle.title}</span>
                             </div>
-                            {/* Toggle on/off */}
                             <button
                               type="button"
                               onClick={() => adminActions.togglePuzzle(puzzle.id, isDisabled)}
@@ -124,6 +186,12 @@ export function AdminModal() {
                             >
                               {isDisabled ? 'Off' : 'On'}
                             </button>
+                          </div>
+
+                          {/* Answer */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] uppercase tracking-[0.2em] text-dg-muted w-14 shrink-0">Answer</span>
+                            <span className="text-[13px] font-mono text-dg-accent">{puzzle.demoAnswer ?? '—'}</span>
                           </div>
 
                           {/* Status selector */}
@@ -155,7 +223,7 @@ export function AdminModal() {
                           <div className="grid grid-cols-3 gap-3">
                             <div className="space-y-1">
                               <label className="text-[10px] uppercase tracking-[0.2em] text-dg-muted block">
-                                Cooldown
+                                Wait between Qs
                               </label>
                               <div className="flex items-center gap-1">
                                 <input
@@ -164,12 +232,13 @@ export function AdminModal() {
                                   onChange={(e) => adminActions.updatePuzzleTiming(puzzle.id, { cooldownMin: Number(e.target.value) })}
                                   className="w-full bg-transparent border-b border-dg-border focus:border-dg-accent text-dg-fg text-[13px] font-mono py-1 outline-none"
                                 />
-                                <span className="text-[10px] text-dg-muted shrink-0">s ({formatSeconds(cooldown)})</span>
+                                <span className="text-[10px] text-dg-muted shrink-0">s</span>
                               </div>
+                              <span className="text-[10px] text-dg-muted/60">{formatDuration(cooldown)}</span>
                             </div>
                             <div className="space-y-1">
                               <label className="text-[10px] uppercase tracking-[0.2em] text-dg-muted block">
-                                Penalty
+                                Wrong/hint lock
                               </label>
                               <div className="flex items-center gap-1">
                                 <input
@@ -180,10 +249,11 @@ export function AdminModal() {
                                 />
                                 <span className="text-[10px] text-dg-muted shrink-0">s</span>
                               </div>
+                              <span className="text-[10px] text-dg-muted/60">{formatDuration(penaltyBase)}</span>
                             </div>
                             <div className="space-y-1">
                               <label className="text-[10px] uppercase tracking-[0.2em] text-dg-muted block">
-                                Increment
+                                +per wrong
                               </label>
                               <div className="flex items-center gap-1">
                                 <input
@@ -194,6 +264,7 @@ export function AdminModal() {
                                 />
                                 <span className="text-[10px] text-dg-muted shrink-0">s</span>
                               </div>
+                              <span className="text-[10px] text-dg-muted/60">+{formatDuration(penaltyInc)}/try</span>
                             </div>
                           </div>
                         </div>
@@ -204,7 +275,7 @@ export function AdminModal() {
               )}
             </div>
 
-            {/* Footer - always visible */}
+            {/* Footer */}
             {authorized && (
               <div className="flex flex-wrap gap-3 p-6 pt-4 border-t border-dg-border shrink-0">
                 <button
@@ -212,7 +283,18 @@ export function AdminModal() {
                   onClick={() => { if (confirm('Reset all progress? This cannot be undone.')) adminActions.resetJourney(); }}
                   className="px-4 py-2 border border-dg-red/40 text-dg-red rounded-full text-[11px] uppercase tracking-[0.3em] font-mono hover:bg-dg-red/10 transition-colors"
                 >
-                  Reset journey
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className={`px-5 py-2 rounded-full text-[11px] uppercase tracking-[0.3em] font-mono transition-colors ${
+                    saved
+                      ? 'border border-dg-green bg-dg-green/15 text-dg-green'
+                      : 'border border-dg-accent bg-dg-accent/10 text-dg-accent hover:bg-dg-accent/20'
+                  }`}
+                >
+                  {saved ? 'Saved' : 'Save'}
                 </button>
                 <button
                   type="button"
