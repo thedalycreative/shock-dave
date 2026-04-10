@@ -1,8 +1,112 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
-  <path d="M70 30 L70 80 Q70 105 100 105 Q130 105 130 80 L130 30" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <line x1="70" y1="30" x2="130" y2="30" stroke="#c8a45a" stroke-width="1.5"/>
-  <path d="M70 45 Q50 45 50 60 Q50 75 70 75" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <path d="M130 45 Q150 45 150 60 Q150 75 130 75" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <line x1="100" y1="105" x2="100" y2="120" stroke="#c8a45a" stroke-width="1.5"/>
-  <rect x="80" y="120" width="40" height="10" stroke="#c8a45a" stroke-width="1.5" fill="#c8a45a" fill-opacity="0.15"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <linearGradient id="cupGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3a332b"/>
+      <stop offset="25%" stop-color="#c8a45a"/>
+      <stop offset="50%" stop-color="#e8d5a3"/>
+      <stop offset="75%" stop-color="#c8a45a"/>
+      <stop offset="100%" stop-color="#3a332b"/>
+    </linearGradient>
+    <linearGradient id="baseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c8a45a"/>
+      <stop offset="100%" stop-color="#3a332b"/>
+    </linearGradient>
+    <radialGradient id="trophyGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#c8a45a" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#c8a45a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="handleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c8a45a"/>
+      <stop offset="100%" stop-color="#3a332b"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="#0d0b08"/>
+  <ellipse cx="200" cy="130" rx="140" ry="120" fill="url(#trophyGlow)"/>
+  <!-- Base platform -->
+  <rect x="130" y="258" width="140" height="12" rx="2" fill="url(#baseGrad)" stroke="#c8a45a" stroke-width="0.8"/>
+  <rect x="140" y="252" width="120" height="8" rx="2" fill="#3a332b" stroke="#c8a45a" stroke-width="0.6"/>
+  <rect x="155" y="246" width="90" height="8" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.5"/>
+  <!-- Base engraving lines -->
+  <line x1="150" y1="264" x2="250" y2="264" stroke="#e8d5a3" stroke-width="0.3" opacity="0.4"/>
+  <line x1="145" y1="261" x2="255" y2="261" stroke="#e8d5a3" stroke-width="0.2" opacity="0.3"/>
+  <!-- Stem -->
+  <rect x="190" y="200" width="20" height="48" rx="2" fill="url(#cupGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+  <!-- Stem detail -->
+  <ellipse cx="200" cy="210" rx="14" ry="4" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.5"/>
+  <ellipse cx="200" cy="230" rx="12" ry="3" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.4"/>
+  <!-- Cup bowl -->
+  <path d="M145,70 L145,140 Q145,195 200,195 Q255,195 255,140 L255,70 Z" fill="url(#cupGrad)" stroke="#c8a45a" stroke-width="1.2"/>
+  <!-- Cup rim -->
+  <rect x="140" y="65" width="120" height="8" rx="2" fill="#e8d5a3" stroke="#c8a45a" stroke-width="0.8"/>
+  <!-- Cup inner shadow -->
+  <path d="M150,73 L150,100 Q150,110 200,110 Q250,110 250,100 L250,73" fill="#1a1612" stroke="none" opacity="0.4"/>
+  <!-- Engraving lines on cup -->
+  <g stroke="#e8d5a3" stroke-width="0.3" opacity="0.35" fill="none">
+    <path d="M155,95 Q200,88 245,95"/>
+    <path d="M155,105 Q200,98 245,105"/>
+    <rect x="165" y="120" width="70" height="40" rx="4"/>
+    <rect x="170" y="125" width="60" height="30" rx="3"/>
+    <!-- Star engraving -->
+    <path d="M200,130 L203,138 L212,138 L205,143 L208,152 L200,147 L192,152 L195,143 L188,138 L197,138 Z"/>
+  </g>
+  <!-- Cup highlight streaks -->
+  <line x1="160" y1="80" x2="160" y2="180" stroke="#ede8dd" stroke-width="1.5" opacity="0.08"/>
+  <line x1="165" y1="78" x2="165" y2="185" stroke="#ede8dd" stroke-width="0.8" opacity="0.06"/>
+  <line x1="235" y1="80" x2="235" y2="175" stroke="#ede8dd" stroke-width="0.5" opacity="0.05"/>
+  <!-- Left handle -->
+  <path d="M145,85 Q110,85 105,110 Q100,140 115,160 Q130,175 145,165" fill="none" stroke="url(#handleGrad)" stroke-width="5"/>
+  <path d="M145,85 Q110,85 105,110 Q100,140 115,160 Q130,175 145,165" fill="none" stroke="#c8a45a" stroke-width="1"/>
+  <!-- Left handle detail -->
+  <path d="M145,90 Q118,90 113,110 Q108,135 120,155 Q130,168 145,160" fill="none" stroke="#e8d5a3" stroke-width="0.3" opacity="0.3"/>
+  <!-- Right handle -->
+  <path d="M255,85 Q290,85 295,110 Q300,140 285,160 Q270,175 255,165" fill="none" stroke="url(#handleGrad)" stroke-width="5"/>
+  <path d="M255,85 Q290,85 295,110 Q300,140 285,160 Q270,175 255,165" fill="none" stroke="#c8a45a" stroke-width="1"/>
+  <path d="M255,90 Q282,90 287,110 Q292,135 280,155 Q270,168 255,160" fill="none" stroke="#e8d5a3" stroke-width="0.3" opacity="0.3"/>
+  <!-- AFL footy shape - below trophy -->
+  <g transform="translate(55,210)" opacity="0.5">
+    <ellipse cx="30" cy="25" rx="25" ry="15" fill="#1a1612" stroke="#c8a45a" stroke-width="0.8"/>
+    <path d="M10,25 Q30,18 50,25" fill="none" stroke="#c8a45a" stroke-width="0.4"/>
+    <line x1="30" y1="10" x2="30" y2="40" stroke="#c8a45a" stroke-width="0.4"/>
+    <!-- Lace lines -->
+    <line x1="27" y1="15" x2="33" y2="15" stroke="#c8a45a" stroke-width="0.3"/>
+    <line x1="26" y1="19" x2="34" y2="19" stroke="#c8a45a" stroke-width="0.3"/>
+    <line x1="27" y1="23" x2="33" y2="23" stroke="#c8a45a" stroke-width="0.3"/>
+    <line x1="26" y1="27" x2="34" y2="27" stroke="#c8a45a" stroke-width="0.3"/>
+    <line x1="27" y1="31" x2="33" y2="31" stroke="#c8a45a" stroke-width="0.3"/>
+    <line x1="27" y1="35" x2="33" y2="35" stroke="#c8a45a" stroke-width="0.3"/>
+  </g>
+  <!-- AFL footy - right -->
+  <g transform="translate(315,215) scale(-1,1)" opacity="0.4">
+    <ellipse cx="-30" cy="25" rx="22" ry="13" fill="#1a1612" stroke="#c8a45a" stroke-width="0.7"/>
+    <line x1="-30" y1="12" x2="-30" y2="38" stroke="#c8a45a" stroke-width="0.3"/>
+    <line x1="-33" y1="16" x2="-27" y2="16" stroke="#c8a45a" stroke-width="0.25"/>
+    <line x1="-33" y1="20" x2="-27" y2="20" stroke="#c8a45a" stroke-width="0.25"/>
+    <line x1="-33" y1="24" x2="-27" y2="24" stroke="#c8a45a" stroke-width="0.25"/>
+    <line x1="-33" y1="28" x2="-27" y2="28" stroke="#c8a45a" stroke-width="0.25"/>
+    <line x1="-33" y1="32" x2="-27" y2="32" stroke="#c8a45a" stroke-width="0.25"/>
+  </g>
+  <!-- Laurel wreath - left -->
+  <g transform="translate(120,15)" stroke="#c8a45a" fill="none" opacity="0.4">
+    <path d="M60,35 Q50,30 45,20 Q42,12 48,8 Q55,5 58,12 Q60,18 58,25" stroke-width="0.7"/>
+    <path d="M56,40 Q44,37 38,28 Q34,20 40,15 Q48,12 50,20 Q52,27 48,33" stroke-width="0.7"/>
+    <path d="M52,48 Q40,47 33,40 Q28,33 34,28 Q42,26 43,34 Q44,40 40,45" stroke-width="0.7"/>
+  </g>
+  <!-- Laurel wreath - right -->
+  <g transform="translate(280,15) scale(-1,1)" stroke="#c8a45a" fill="none" opacity="0.4">
+    <path d="M-60,35 Q-50,30 -45,20 Q-42,12 -48,8 Q-55,5 -58,12 Q-60,18 -58,25" stroke-width="0.7"/>
+    <path d="M-56,40 Q-44,37 -38,28 Q-34,20 -40,15 Q-48,12 -50,20 Q-52,27 -48,33" stroke-width="0.7"/>
+    <path d="M-52,48 Q-40,47 -33,40 Q-28,33 -34,28 Q-42,26 -43,34 Q-44,40 -40,45" stroke-width="0.7"/>
+  </g>
+  <!-- Sparkle accents -->
+  <g stroke="#c8a45a" stroke-width="0.8" opacity="0.3">
+    <line x1="310" y1="55" x2="310" y2="65"/><line x1="305" y1="60" x2="315" y2="60"/>
+    <line x1="85" y1="70" x2="85" y2="78"/><line x1="81" y1="74" x2="89" y2="74"/>
+    <line x1="330" y1="120" x2="330" y2="126"/><line x1="327" y1="123" x2="333" y2="123"/>
+    <line x1="65" y1="150" x2="65" y2="156"/><line x1="62" y1="153" x2="68" y2="153"/>
+  </g>
+  <!-- Corner accents -->
+  <path d="M10,10 L30,10 M10,10 L10,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,10 L370,10 M390,10 L390,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M10,290 L30,290 M10,290 L10,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,290 L370,290 M390,290 L390,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
 </svg>

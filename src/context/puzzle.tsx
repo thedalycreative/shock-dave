@@ -1,8 +1,10 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import type { PuzzleConfig, PuzzleId, SessionProgress } from '../types/puzzle';
@@ -17,8 +19,6 @@ import {
   onSnapshot,
   doc,
   setDoc,
-  getDoc,
-  updateDoc,
 } from 'firebase/firestore';
 
 type PuzzleActions = {
@@ -47,6 +47,8 @@ interface PuzzleContextValue {
 
 const PuzzleContext = createContext<PuzzleContextValue | undefined>(undefined);
 
+const LOCAL_STORAGE_KEY = 'dave-puzzle-progress';
+
 const initialProgress: SessionProgress = {
   sessionId: 'guest',
   currentPuzzle: samplePuzzles[0].id,
@@ -60,13 +62,40 @@ const initialProgress: SessionProgress = {
   lastUpdated: Date.now(),
 };
 
+/** Read cached progress from localStorage for instant hydration */
+function loadLocalProgress(): SessionProgress | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SessionProgress;
+    // Sanity check — must have a currentPuzzle field
+    if (parsed && parsed.currentPuzzle) return parsed;
+  } catch { /* corrupt data — ignore */ }
+  return null;
+}
+
+/** Cache progress to localStorage */
+function saveLocalProgress(progress: SessionProgress) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(progress));
+  } catch { /* quota exceeded — ignore */ }
+}
+
 export function PuzzleProvider({ children }: { children: React.ReactNode }) {
-  const [progress, setProgress] = useState(initialProgress);
-  const [sessionId, setSessionId] = useState(() => {
+  // Hydrate immediately from localStorage, then Firestore overrides
+  const [progress, setProgress] = useState<SessionProgress>(() => {
+    const cached = loadLocalProgress();
+    return cached ?? initialProgress;
+  });
+  const [sessionId] = useState(() => {
     if (typeof window === 'undefined') return 'guest';
     return generateSessionToken();
   });
   const isFirebaseEnabled = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+  // Track whether Firestore has done its initial hydration
+  const firestoreHydrated = useRef(false);
 
   const order = samplePuzzles.map((p) => p.id);
   const currentIndex = Math.max(0, order.indexOf(progress.currentPuzzle));
@@ -76,59 +105,75 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
     Math.round(((currentIndex + 1) / samplePuzzles.length) * 100)
   );
 
-  const persistSession = async (patch: Partial<SessionProgress>) => {
+  // Cache to localStorage on every progress change
+  useEffect(() => {
+    saveLocalProgress(progress);
+  }, [progress]);
+
+  /** Persist full progress to Firestore (merge so partial fields don't clobber) */
+  const persistToFirestore = useCallback(async (data: SessionProgress) => {
     if (!isFirebaseEnabled || typeof window === 'undefined') return;
     try {
       const sessionDoc = doc(sessionsCollection, sessionId);
-      await updateDoc(sessionDoc, {
-        ...patch,
-        lastUpdated: Date.now(),
-      });
+      await setDoc(sessionDoc, { ...data, lastUpdated: Date.now() }, { merge: true });
     } catch (error) {
-      console.warn('Persist session failed', error);
+      console.warn('Firestore persist failed', error);
     }
-  };
+  }, [isFirebaseEnabled, sessionId]);
 
+  // Listen for Firestore changes (handles cross-device sync + initial hydration)
   useEffect(() => {
     if (!isFirebaseEnabled || typeof window === 'undefined') return;
     const sessionDoc = doc(sessionsCollection, sessionId);
+
+    // Create the doc if it doesn't exist (merge won't overwrite existing data)
+    const cached = loadLocalProgress();
+    setDoc(sessionDoc, {
+      ...(cached ?? initialProgress),
+      sessionId,
+      lastUpdated: Date.now(),
+    }, { merge: true }).catch(() => {});
+
     const unsub = onSnapshot(sessionDoc, (snapshot) => {
       if (!snapshot.exists()) return;
-      const data = snapshot.data() as Partial<SessionProgress>;
-      setProgress((prev) => ({
-        ...prev,
-        ...data,
-      }));
+      const data = snapshot.data() as SessionProgress;
+      // On first hydration, Firestore wins if it has newer data
+      // On subsequent updates, Firestore always wins (it's the source of truth)
+      setProgress((prev) => {
+        const merged = { ...prev, ...data };
+        // Use whichever is more recent
+        if (!firestoreHydrated.current) {
+          firestoreHydrated.current = true;
+          // Firestore is newer or has more solved puzzles — use it
+          const firestoreSolved = Object.keys(data.solved ?? {}).length;
+          const localSolved = Object.keys(prev.solved ?? {}).length;
+          if (data.lastUpdated >= prev.lastUpdated || firestoreSolved > localSolved) {
+            return merged;
+          }
+          // Local is newer — push local to Firestore
+          persistToFirestore(prev);
+          return prev;
+        }
+        return merged;
+      });
     }, (error) => {
       console.warn('Snapshot listener failed, using local state', error);
     });
     return () => unsub();
-  }, [isFirebaseEnabled, sessionId]);
+  }, [isFirebaseEnabled, sessionId, persistToFirestore]);
 
-  const ensureSessionDoc = async () => {
-    if (!isFirebaseEnabled || typeof window === 'undefined') return;
-    try {
-      const sessionDoc = doc(sessionsCollection, sessionId);
-      const snapshot = await getDoc(sessionDoc);
-      if (!snapshot.exists()) {
-        await setDoc(sessionDoc, {
-          ...initialProgress,
-          sessionId,
-          sessionStart: Date.now(),
-          lastUpdated: Date.now(),
-        });
-      }
-    } catch (error) {
-      console.warn('Firebase session init failed, using local state', error);
-    }
-  };
-
-  useEffect(() => {
-    ensureSessionDoc();
-  }, [sessionId, isFirebaseEnabled]);
+  /** Update progress state AND persist to Firestore in one step */
+  const updateAndPersist = useCallback((updater: (prev: SessionProgress) => SessionProgress) => {
+    setProgress((prev) => {
+      const next = updater(prev);
+      // Fire-and-forget persist to Firestore
+      persistToFirestore(next);
+      return next;
+    });
+  }, [persistToFirestore]);
 
   const applySolved = (id: PuzzleId, timestamp: number) => {
-    setProgress((prev) => {
+    updateAndPersist((prev) => {
       const solved = { ...prev.solved, [id]: timestamp };
       const nextIndex = Math.min(samplePuzzles.length - 1, order.indexOf(id) + 1);
       const nextPuzzle = order[nextIndex];
@@ -145,7 +190,7 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
   };
 
   const applyAttempt = (id: PuzzleId, timestamp: number) => {
-    setProgress((prev) => {
+    updateAndPersist((prev) => {
       const attempts = (prev.incorrectAttempts[id] ?? 0) + 1;
       const puzzle = samplePuzzles.find((p) => p.id === id) ?? currentPuzzle;
       const timing = getEffectiveTiming(puzzle);
@@ -161,7 +206,7 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
   };
 
   const applyHint = (id: PuzzleId, timestamp: number) => {
-    setProgress((prev) => {
+    updateAndPersist((prev) => {
       const used = (prev.hintsUsed[id] ?? 0) + 1;
       const puzzle = samplePuzzles.find((p) => p.id === id) ?? currentPuzzle;
       const timing = getEffectiveTiming(puzzle);
@@ -179,142 +224,66 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
 
   const submitAnswer = async (id: PuzzleId, attempt: string) => {
     const timestamp = Date.now();
-    if (!isFirebaseEnabled) {
-      const puzzle = samplePuzzles.find((p) => p.id === id);
-      if (!puzzle) return false;
-      const timing = getEffectiveTiming(puzzle);
-      const normalized = attempt.toLowerCase().trim();
-      if (puzzle.demoAnswer && normalized === puzzle.demoAnswer.toLowerCase()) {
-        applySolved(id, timestamp);
-        await persistSession({
-          solved: { ...progress.solved, [id]: timestamp },
-          currentPuzzle: order[Math.min(order.length - 1, order.indexOf(id) + 1)],
-          penaltyExpiresAt: 0,
-          cooldownExpiresAt: timestamp + timing.cooldownMin * 1000,
+    // Try Firebase Cloud Function first, fall back to local validation
+    if (isFirebaseEnabled) {
+      try {
+        const response = await validateAnswer({
+          sessionId,
+          puzzleId: id,
+          attempt,
         });
-        return true;
+        const data = response.data as {
+          success: boolean;
+          penaltyExpiresAt: number;
+          cooldownExpiresAt: number;
+          nextPuzzleId: PuzzleId;
+          incorrectAttempts: number;
+          hintsUsed: number;
+          solvedAt: number;
+        };
+        if (data.success) {
+          applySolved(id, data.solvedAt ?? timestamp);
+          return true;
+        }
+        applyAttempt(id, timestamp);
+        return false;
+      } catch (error) {
+        console.warn('Cloud Function failed, falling back to local validation', error);
       }
-      applyAttempt(id, timestamp);
-      await persistSession({
-        incorrectAttempts: {
-          ...progress.incorrectAttempts,
-          [id]: (progress.incorrectAttempts[id] ?? 0) + 1,
-        },
-        penaltyExpiresAt: Math.max(progress.penaltyExpiresAt, timestamp) + timing.penaltyIncrement * 1000,
-      });
-      return false;
     }
 
-    try {
-      const response = await validateAnswer({
-        sessionId,
-        puzzleId: id,
-        attempt,
-      });
-      const data = response.data as {
-        success: boolean;
-        penaltyExpiresAt: number;
-        cooldownExpiresAt: number;
-        nextPuzzleId: PuzzleId;
-        incorrectAttempts: number;
-        hintsUsed: number;
-        solvedAt: number;
-      };
-      if (data.success) {
-        applySolved(id, data.solvedAt ?? timestamp);
-        await persistSession({
-          solved: { ...progress.solved, [id]: data.solvedAt ?? timestamp },
-          currentPuzzle: data.nextPuzzleId,
-          penaltyExpiresAt: data.penaltyExpiresAt,
-          cooldownExpiresAt: data.cooldownExpiresAt,
-        });
-        return true;
-      }
-      applyAttempt(id, timestamp);
-      await persistSession({
-        incorrectAttempts: {
-          ...progress.incorrectAttempts,
-          [id]: data.incorrectAttempts,
-        },
-        penaltyExpiresAt: data.penaltyExpiresAt,
-      });
-      return false;
-    } catch (error) {
-      console.warn('Validation failed, falling back to local check', error);
-      // Fallback to local validation when Firebase callable fails
-      const puzzle = samplePuzzles.find((p) => p.id === id);
-      if (!puzzle) return false;
-      const timing = getEffectiveTiming(puzzle);
-      const normalized = attempt.toLowerCase().trim();
-      if (puzzle.demoAnswer && normalized === puzzle.demoAnswer.toLowerCase()) {
-        applySolved(id, timestamp);
-        await persistSession({
-          solved: { ...progress.solved, [id]: timestamp },
-          currentPuzzle: order[Math.min(order.length - 1, order.indexOf(id) + 1)],
-          penaltyExpiresAt: 0,
-          cooldownExpiresAt: timestamp + timing.cooldownMin * 1000,
-        });
-        return true;
-      }
-      applyAttempt(id, timestamp);
-      await persistSession({
-        incorrectAttempts: {
-          ...progress.incorrectAttempts,
-          [id]: (progress.incorrectAttempts[id] ?? 0) + 1,
-        },
-        penaltyExpiresAt: Math.max(progress.penaltyExpiresAt, timestamp) + timing.penaltyIncrement * 1000,
-      });
-      return false;
+    // Local validation (used when Firebase is disabled or Cloud Function fails)
+    const puzzle = samplePuzzles.find((p) => p.id === id);
+    if (!puzzle) return false;
+    const normalized = attempt.toLowerCase().trim();
+    if (puzzle.demoAnswer && normalized === puzzle.demoAnswer.toLowerCase()) {
+      applySolved(id, timestamp);
+      return true;
     }
+    applyAttempt(id, timestamp);
+    return false;
   };
 
   const requestHint = async (id: PuzzleId) => {
     const timestamp = Date.now();
-    if (!isFirebaseEnabled) {
-      const timing = getEffectiveTiming(currentPuzzle);
-      applyHint(id, timestamp);
-      await persistSession({
-        hintsUsed: {
-          ...progress.hintsUsed,
-          [id]: (progress.hintsUsed[id] ?? 0) + 1,
-        },
-        penaltyExpiresAt:
-          Math.max(progress.penaltyExpiresAt, timestamp) +
-          timing.penaltyBase * timing.penaltyMultiplierOnHint * 1000,
-      });
-      return;
+    // Try Firebase Cloud Function first
+    if (isFirebaseEnabled) {
+      try {
+        const response = await requestHintCallable({ sessionId, puzzleId: id });
+        const data = response.data as {
+          hint: string;
+          penaltyExpiresAt: number;
+          hintsUsed: number;
+        };
+        applyHint(id, timestamp);
+        return;
+      } catch (error) {
+        console.warn('Hint Cloud Function failed, falling back to local', error);
+      }
     }
 
-    try {
-      const response = await requestHintCallable({ sessionId, puzzleId: id });
-      const data = response.data as {
-        hint: string;
-        penaltyExpiresAt: number;
-        hintsUsed: number;
-      };
-      applyHint(id, timestamp);
-      await persistSession({
-        hintsUsed: {
-          ...progress.hintsUsed,
-          [id]: data.hintsUsed,
-        },
-        penaltyExpiresAt: data.penaltyExpiresAt,
-      });
-    } catch (error) {
-      console.warn('Hint request failed, falling back to local', error);
-      // Fallback to local hint when Firebase callable fails
-      const timing = getEffectiveTiming(currentPuzzle);
-      applyHint(id, timestamp);
-      await persistSession({
-        hintsUsed: {
-          ...progress.hintsUsed,
-          [id]: (progress.hintsUsed[id] ?? 0) + 1,
-        },
-        penaltyExpiresAt:
-          Math.max(progress.penaltyExpiresAt, timestamp) +
-          timing.penaltyBase * timing.penaltyMultiplierOnHint * 1000,
-      });
-    }
+    // Local fallback
+    applyHint(id, timestamp);
   };
 
   const [disabledPuzzles, setDisabledPuzzles] = useState<Set<PuzzleId>>(new Set());
@@ -333,7 +302,7 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
 
   const adminActions: AdminActions = useMemo(() => ({
     setPuzzleStatus: (id: PuzzleId, status: 'solved' | 'active' | 'locked') => {
-      setProgress((prev) => {
+      updateAndPersist((prev) => {
         const next = { ...prev };
         if (status === 'solved') {
           next.solved = { ...prev.solved, [id]: Date.now() };
@@ -369,13 +338,22 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
       });
     },
     resetJourney: () => {
-      setProgress({ ...initialProgress, sessionId, sessionStart: Date.now(), lastUpdated: Date.now() });
-      persistSession({ ...initialProgress, sessionId, sessionStart: Date.now(), lastUpdated: Date.now() });
+      const fresh = { ...initialProgress, sessionId, sessionStart: Date.now(), lastUpdated: Date.now() };
+      setProgress(fresh);
+      persistToFirestore(fresh);
+      // Clear localStorage too
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
     },
     saveAll: () => {
-      persistSession({ ...progress, lastUpdated: Date.now() });
+      setProgress((prev) => {
+        const updated = { ...prev, lastUpdated: Date.now() };
+        persistToFirestore(updated);
+        return updated;
+      });
     },
-  }), [sessionId]);
+  }), [sessionId, updateAndPersist, persistToFirestore]);
 
   // Recalculate active cooldown when admin changes timing overrides
   useEffect(() => {

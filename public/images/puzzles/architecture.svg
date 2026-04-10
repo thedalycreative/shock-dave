@@ -1,9 +1,126 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
-  <rect x="55" y="70" width="15" height="70" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <rect x="130" y="70" width="15" height="70" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <path d="M55 70 A45 45 0 0 1 145 70" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <path d="M95 25 L90 35 L100 38 L110 35 L105 25Z" stroke="#c8a45a" stroke-width="1.5" fill="#c8a45a" fill-opacity="0.2"/>
-  <line x1="50" y1="140" x2="150" y2="140" stroke="#c8a45a" stroke-width="1.5"/>
-  <line x1="55" y1="70" x2="70" y2="70" stroke="#c8a45a" stroke-width="1"/>
-  <line x1="130" y1="70" x2="145" y2="70" stroke="#c8a45a" stroke-width="1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <linearGradient id="pillarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3a332b"/>
+      <stop offset="30%" stop-color="#e8d5a3"/>
+      <stop offset="70%" stop-color="#c8a45a"/>
+      <stop offset="100%" stop-color="#3a332b"/>
+    </linearGradient>
+    <linearGradient id="archGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#3a332b"/>
+      <stop offset="100%" stop-color="#1a1612"/>
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c8a45a" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#1a1612" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="ceilingGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#1a1612"/>
+      <stop offset="100%" stop-color="#0d0b08"/>
+    </linearGradient>
+    <clipPath id="waterClip"><rect x="0" y="220" width="400" height="80"/></clipPath>
+  </defs>
+  <rect width="400" height="300" fill="#0d0b08"/>
+  <rect x="0" y="0" width="400" height="60" fill="url(#ceilingGrad)"/>
+  <rect x="30" y="40" width="340" height="185" fill="#1a1612" stroke="none"/>
+  <g opacity="0.2">
+    <rect x="30" y="220" width="340" height="80" fill="#1a1612"/>
+    <g stroke="#c8a45a" stroke-width="0.3" fill="none">
+      <rect x="30" y="220" width="20" height="20"/><rect x="50" y="220" width="20" height="20"/>
+      <rect x="70" y="220" width="20" height="20"/><rect x="90" y="220" width="20" height="20"/>
+      <rect x="110" y="220" width="20" height="20"/><rect x="130" y="220" width="20" height="20"/>
+      <rect x="150" y="220" width="20" height="20"/><rect x="170" y="220" width="20" height="20"/>
+      <rect x="190" y="220" width="20" height="20"/><rect x="210" y="220" width="20" height="20"/>
+      <rect x="230" y="220" width="20" height="20"/><rect x="250" y="220" width="20" height="20"/>
+      <rect x="270" y="220" width="20" height="20"/><rect x="290" y="220" width="20" height="20"/>
+      <rect x="310" y="220" width="20" height="20"/><rect x="330" y="220" width="20" height="20"/>
+      <rect x="350" y="220" width="20" height="20"/>
+      <path d="M40,220 L50,230 L40,240 L30,230 Z"/><path d="M80,220 L90,230 L80,240 L70,230 Z"/>
+      <path d="M120,220 L130,230 L120,240 L110,230 Z"/><path d="M160,220 L170,230 L160,240 L150,230 Z"/>
+      <path d="M200,220 L210,230 L200,240 L190,230 Z"/><path d="M240,220 L250,230 L240,240 L230,230 Z"/>
+      <path d="M280,220 L290,230 L280,240 L270,230 Z"/><path d="M320,220 L330,230 L320,240 L310,230 Z"/>
+      <path d="M360,220 L370,230 L360,240 L350,230 Z"/>
+    </g>
+  </g>
+  <rect x="80" y="225" width="240" height="60" rx="3" fill="url(#waterGrad)"/>
+  <path d="M80,228 Q120,225 160,228 Q200,231 240,228 Q280,225 320,228" fill="none" stroke="#c8a45a" stroke-width="0.5" opacity="0.3"/>
+  <path d="M140,220 L140,80 Q140,40 200,40 Q260,40 260,80 L260,220" fill="url(#archGrad)" stroke="#c8a45a" stroke-width="1.2"/>
+  <path d="M193,42 L200,35 L207,42" fill="#3a332b" stroke="#c8a45a" stroke-width="0.6"/>
+  <g stroke="#c8a45a" stroke-width="0.3" opacity="0.4">
+    <line x1="155" y1="60" x2="160" y2="70"/><line x1="245" y1="60" x2="240" y2="70"/>
+    <line x1="148" y1="75" x2="153" y2="85"/><line x1="252" y1="75" x2="247" y2="85"/>
+    <line x1="143" y1="92" x2="148" y2="100"/><line x1="257" y1="92" x2="252" y2="100"/>
+  </g>
+  <g>
+    <rect x="118" y="210" width="30" height="12" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.8"/>
+    <rect x="120" y="205" width="26" height="7" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.5"/>
+    <rect x="124" y="80" width="18" height="125" fill="url(#pillarGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+    <g stroke="#1a1612" stroke-width="0.4" opacity="0.3">
+      <line x1="128" y1="85" x2="128" y2="200"/><line x1="131" y1="85" x2="131" y2="200"/>
+      <line x1="134" y1="85" x2="134" y2="200"/><line x1="137" y1="85" x2="137" y2="200"/>
+    </g>
+    <rect x="119" y="72" width="28" height="10" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.6"/>
+    <path d="M121,72 Q133,62 145,72" fill="none" stroke="#c8a45a" stroke-width="0.5"/>
+    <path d="M126,72 Q128,66 125,62" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.5"/>
+    <path d="M133,72 Q133,65 133,60" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.5"/>
+    <path d="M140,72 Q138,66 141,62" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.5"/>
+    <path d="M120,74 Q117,72 118,69 Q120,67 122,69" fill="none" stroke="#c8a45a" stroke-width="0.5"/>
+    <path d="M146,74 Q149,72 148,69 Q146,67 144,69" fill="none" stroke="#c8a45a" stroke-width="0.5"/>
+  </g>
+  <g>
+    <rect x="252" y="210" width="30" height="12" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.8"/>
+    <rect x="254" y="205" width="26" height="7" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.5"/>
+    <rect x="258" y="80" width="18" height="125" fill="url(#pillarGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+    <g stroke="#1a1612" stroke-width="0.4" opacity="0.3">
+      <line x1="262" y1="85" x2="262" y2="200"/><line x1="265" y1="85" x2="265" y2="200"/>
+      <line x1="268" y1="85" x2="268" y2="200"/><line x1="271" y1="85" x2="271" y2="200"/>
+    </g>
+    <rect x="253" y="72" width="28" height="10" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.6"/>
+    <path d="M255,72 Q267,62 279,72" fill="none" stroke="#c8a45a" stroke-width="0.5"/>
+    <path d="M260,72 Q262,66 259,62" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.5"/>
+    <path d="M267,72 Q267,65 267,60" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.5"/>
+    <path d="M274,72 Q272,66 275,62" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.5"/>
+    <path d="M254,74 Q251,72 252,69 Q254,67 256,69" fill="none" stroke="#c8a45a" stroke-width="0.5"/>
+    <path d="M280,74 Q283,72 282,69 Q280,67 278,69" fill="none" stroke="#c8a45a" stroke-width="0.5"/>
+  </g>
+  <g opacity="0.5">
+    <rect x="40" y="90" width="16" height="130" fill="url(#pillarGrad)" stroke="#c8a45a" stroke-width="0.5"/>
+    <rect x="36" y="82" width="24" height="10" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.4"/>
+    <rect x="35" y="218" width="26" height="8" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.4"/>
+  </g>
+  <g opacity="0.5">
+    <rect x="344" y="90" width="16" height="130" fill="url(#pillarGrad)" stroke="#c8a45a" stroke-width="0.5"/>
+    <rect x="340" y="82" width="24" height="10" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.4"/>
+    <rect x="339" y="218" width="26" height="8" rx="1" fill="#3a332b" stroke="#c8a45a" stroke-width="0.4"/>
+  </g>
+  <rect x="30" y="60" width="340" height="14" fill="#3a332b" stroke="#c8a45a" stroke-width="0.5"/>
+  <line x1="30" y1="67" x2="370" y2="67" stroke="#c8a45a" stroke-width="0.3" opacity="0.3"/>
+  <g fill="#c8a45a" opacity="0.25">
+    <rect x="35" y="62" width="4" height="6"/><rect x="45" y="62" width="4" height="6"/>
+    <rect x="55" y="62" width="4" height="6"/><rect x="65" y="62" width="4" height="6"/>
+    <rect x="75" y="62" width="4" height="6"/><rect x="85" y="62" width="4" height="6"/>
+    <rect x="95" y="62" width="4" height="6"/><rect x="105" y="62" width="4" height="6"/>
+    <rect x="290" y="62" width="4" height="6"/><rect x="300" y="62" width="4" height="6"/>
+    <rect x="310" y="62" width="4" height="6"/><rect x="320" y="62" width="4" height="6"/>
+    <rect x="330" y="62" width="4" height="6"/><rect x="340" y="62" width="4" height="6"/>
+    <rect x="350" y="62" width="4" height="6"/><rect x="360" y="62" width="4" height="6"/>
+  </g>
+  <g clip-path="url(#waterClip)" opacity="0.12">
+    <rect x="124" y="225" width="18" height="60" fill="url(#pillarGrad)"/>
+    <rect x="258" y="225" width="18" height="60" fill="url(#pillarGrad)"/>
+    <path d="M140,225 Q140,265 200,265 Q260,265 260,225" fill="none" stroke="#c8a45a" stroke-width="0.8"/>
+  </g>
+  <g stroke="#c8a45a" fill="none" stroke-width="0.3" opacity="0.2">
+    <ellipse cx="200" cy="245" rx="60" ry="3"/><ellipse cx="200" cy="255" rx="80" ry="4"/>
+    <ellipse cx="200" cy="265" rx="100" ry="4"/><ellipse cx="200" cy="275" rx="110" ry="3"/>
+  </g>
+  <g fill="none" stroke="#c8a45a" stroke-width="0.5" opacity="0.12">
+    <path d="M150,225 Q148,215 152,205 Q155,195 150,185"/>
+    <path d="M200,225 Q198,215 202,205 Q205,195 200,185"/>
+    <path d="M250,225 Q248,215 252,205 Q255,195 250,185"/>
+  </g>
+  <path d="M10,10 L30,10 M10,10 L10,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,10 L370,10 M390,10 L390,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M10,290 L30,290 M10,290 L10,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,290 L370,290 M390,290 L390,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
 </svg>

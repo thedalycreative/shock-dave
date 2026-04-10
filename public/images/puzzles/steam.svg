@@ -1,6 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
-  <line x1="50" y1="140" x2="150" y2="140" stroke="#c8a45a" stroke-width="1.5"/>
-  <path d="M75 130 Q68 110 78 95 Q88 80 78 60 Q68 40 75 20" stroke="#c8a45a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-  <path d="M100 130 Q90 110 103 95 Q116 80 103 60 Q90 40 100 20" stroke="#c8a45a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-  <path d="M125 130 Q115 110 128 95 Q141 80 128 60 Q115 40 125 20" stroke="#c8a45a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3a332b"/>
+      <stop offset="50%" stop-color="#c8a45a" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#1a1612"/>
+    </linearGradient>
+    <linearGradient id="stoneGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#3a332b"/>
+      <stop offset="100%" stop-color="#c8a45a" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="bucketGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3a332b"/>
+      <stop offset="40%" stop-color="#c8a45a" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#1a1612"/>
+    </linearGradient>
+    <radialGradient id="steamGlow" cx="50%" cy="70%" r="60%">
+      <stop offset="0%" stop-color="#c8a45a" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#c8a45a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="#0d0b08"/>
+  <rect x="0" y="0" width="400" height="300" fill="url(#steamGlow)"/>
+  <!-- Back wall -->
+  <rect x="0" y="0" width="400" height="180" fill="#1a1612" opacity="0.5"/>
+  <!-- Wooden bench slats - upper bench -->
+  <g>
+    <rect x="20" y="140" width="360" height="14" rx="1" fill="url(#woodGrad)" stroke="#c8a45a" stroke-width="0.5"/>
+    <rect x="20" y="158" width="360" height="14" rx="1" fill="url(#woodGrad)" stroke="#c8a45a" stroke-width="0.5"/>
+    <rect x="20" y="176" width="360" height="14" rx="1" fill="url(#woodGrad)" stroke="#c8a45a" stroke-width="0.5"/>
+    <!-- Wood grain details -->
+    <g stroke="#c8a45a" stroke-width="0.2" opacity="0.15">
+      <path d="M30,143 Q100,142 180,144 Q260,146 370,143"/>
+      <path d="M25,148 Q120,147 220,149 Q320,151 375,148"/>
+      <path d="M30,161 Q90,160 180,162 Q270,164 370,161"/>
+      <path d="M25,167 Q130,166 240,168 Q340,170 375,167"/>
+      <path d="M30,179 Q110,178 200,180 Q290,182 370,179"/>
+      <path d="M25,185 Q140,184 250,186 Q350,188 375,185"/>
+    </g>
+    <!-- Knot details -->
+    <circle cx="100" cy="147" r="3" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.2"/>
+    <circle cx="280" cy="165" r="2.5" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.2"/>
+    <circle cx="180" cy="183" r="2" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.15"/>
+  </g>
+  <!-- Lower bench -->
+  <g>
+    <rect x="20" y="220" width="360" height="14" rx="1" fill="url(#woodGrad)" stroke="#c8a45a" stroke-width="0.5"/>
+    <rect x="20" y="238" width="360" height="14" rx="1" fill="url(#woodGrad)" stroke="#c8a45a" stroke-width="0.5"/>
+    <rect x="20" y="256" width="360" height="14" rx="1" fill="url(#woodGrad)" stroke="#c8a45a" stroke-width="0.5"/>
+    <g stroke="#c8a45a" stroke-width="0.2" opacity="0.12">
+      <path d="M30,223 Q120,222 220,224 Q320,226 370,223"/>
+      <path d="M30,241 Q100,240 200,242 Q300,244 370,241"/>
+      <path d="M30,259 Q140,258 240,260 Q340,262 370,259"/>
+    </g>
+    <circle cx="200" cy="227" r="2.5" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.15"/>
+    <circle cx="320" cy="245" r="2" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.15"/>
+  </g>
+  <!-- Bench support posts -->
+  <rect x="40" y="190" width="10" height="30" fill="#3a332b" stroke="#c8a45a" stroke-width="0.4"/>
+  <rect x="350" y="190" width="10" height="30" fill="#3a332b" stroke="#c8a45a" stroke-width="0.4"/>
+  <rect x="190" y="190" width="10" height="30" fill="#3a332b" stroke="#c8a45a" stroke-width="0.4"/>
+  <!-- Sauna heater (kiuas) -->
+  <g transform="translate(290,80)">
+    <!-- Heater base -->
+    <rect x="0" y="40" width="60" height="50" rx="3" fill="#3a332b" stroke="#c8a45a" stroke-width="0.8"/>
+    <!-- Heater grill lines -->
+    <g stroke="#c8a45a" stroke-width="0.4" opacity="0.3">
+      <line x1="5" y1="50" x2="55" y2="50"/><line x1="5" y1="58" x2="55" y2="58"/>
+      <line x1="5" y1="66" x2="55" y2="66"/><line x1="5" y1="74" x2="55" y2="74"/>
+      <line x1="5" y1="82" x2="55" y2="82"/>
+    </g>
+    <!-- Glow from heater -->
+    <rect x="2" y="42" width="56" height="46" rx="2" fill="#c8a45a" opacity="0.04"/>
+    <!-- Stones piled on heater -->
+    <ellipse cx="15" cy="40" rx="10" ry="7" fill="url(#stoneGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+    <ellipse cx="32" cy="38" rx="11" ry="8" fill="url(#stoneGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+    <ellipse cx="48" cy="40" rx="9" ry="7" fill="url(#stoneGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+    <ellipse cx="22" cy="30" rx="9" ry="6" fill="url(#stoneGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+    <ellipse cx="40" cy="30" rx="10" ry="7" fill="url(#stoneGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+    <ellipse cx="30" cy="22" rx="8" ry="6" fill="url(#stoneGrad)" stroke="#c8a45a" stroke-width="0.6"/>
+    <!-- Stone highlights -->
+    <path d="M12,36 Q15,34 18,36" fill="none" stroke="#e8d5a3" stroke-width="0.3" opacity="0.2"/>
+    <path d="M28,34 Q32,32 36,34" fill="none" stroke="#e8d5a3" stroke-width="0.3" opacity="0.2"/>
+    <path d="M26,19 Q30,17 34,19" fill="none" stroke="#e8d5a3" stroke-width="0.3" opacity="0.2"/>
+  </g>
+  <!-- Steam rising from stones -->
+  <g fill="none" stroke="#c8a45a" opacity="0.18">
+    <path d="M310,98 Q305,80 312,60 Q318,40 310,20 Q302,5 310,-10" stroke-width="2"/>
+    <path d="M325,95 Q330,75 323,55 Q316,35 325,15 Q332,0 325,-15" stroke-width="1.8"/>
+    <path d="M340,100 Q335,82 342,62 Q348,42 340,22" stroke-width="1.5"/>
+    <path d="M300,102 Q295,85 302,68 Q308,50 300,32" stroke-width="1.2"/>
+    <path d="M318,92 Q322,70 315,50 Q310,30 318,10" stroke-width="1"/>
+    <path d="M335,98 Q340,78 333,58 Q328,40 335,25" stroke-width="0.8"/>
+  </g>
+  <!-- More steam wisps throughout room -->
+  <g fill="none" stroke="#c8a45a" opacity="0.08">
+    <path d="M100,130 Q95,110 102,90 Q108,70 100,50" stroke-width="1.5"/>
+    <path d="M160,125 Q165,105 158,85 Q152,65 160,45" stroke-width="1.2"/>
+    <path d="M220,128 Q215,108 222,88 Q228,68 220,48" stroke-width="1"/>
+    <path d="M60,135 Q55,115 62,95 Q68,75 60,55" stroke-width="0.8"/>
+  </g>
+  <!-- Bucket (loyly) -->
+  <g transform="translate(60,100)">
+    <path d="M0,40 L5,0 L45,0 L50,40 Z" fill="url(#bucketGrad)" stroke="#c8a45a" stroke-width="0.8"/>
+    <!-- Bucket bands -->
+    <line x1="2" y1="12" x2="48" y2="12" stroke="#c8a45a" stroke-width="0.8" opacity="0.5"/>
+    <line x1="1" y1="28" x2="49" y2="28" stroke="#c8a45a" stroke-width="0.8" opacity="0.5"/>
+    <!-- Bucket wood grain -->
+    <g stroke="#c8a45a" stroke-width="0.2" opacity="0.15">
+      <line x1="15" y1="2" x2="14" y2="38"/><line x1="25" y1="2" x2="24" y2="38"/>
+      <line x1="35" y1="2" x2="34" y2="38"/>
+    </g>
+    <!-- Handle -->
+    <path d="M8,-2 Q25,-18 42,-2" fill="none" stroke="#c8a45a" stroke-width="1.5"/>
+  </g>
+  <!-- Ladle -->
+  <g transform="translate(120,90)">
+    <line x1="0" y1="0" x2="50" y2="-25" stroke="#c8a45a" stroke-width="2"/>
+    <ellipse cx="0" cy="5" rx="12" ry="8" fill="#3a332b" stroke="#c8a45a" stroke-width="0.6"/>
+    <ellipse cx="0" cy="3" rx="9" ry="5" fill="#1a1612" stroke="#c8a45a" stroke-width="0.3"/>
+  </g>
+  <!-- Floor -->
+  <rect x="0" y="272" width="400" height="28" fill="#1a1612" stroke="#c8a45a" stroke-width="0.3" opacity="0.3"/>
+  <!-- Corner accents -->
+  <path d="M10,10 L30,10 M10,10 L10,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,10 L370,10 M390,10 L390,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M10,290 L30,290 M10,290 L10,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,290 L370,290 M390,290 L390,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
 </svg>

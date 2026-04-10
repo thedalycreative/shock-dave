@@ -100,10 +100,10 @@ export function AdminModal({ open, onClose }: AdminModalProps) {
   return (
     <>
       <div
-        className="fixed inset-0 z-40 flex items-center justify-center bg-black/60"
+        className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/60"
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
-        <div className="glass-panel border border-dg-border w-full max-w-lg mx-3 max-h-[90vh] flex flex-col relative text-[12px]">
+        <div className="glass-panel border border-dg-border w-full max-w-lg mx-2 max-h-[85vh] sm:max-h-[90vh] flex flex-col relative text-[12px] rounded-xl my-2">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-dg-border shrink-0">
             <h3 className="text-[16px] font-serif font-light">Admin</h3>
@@ -111,7 +111,7 @@ export function AdminModal({ open, onClose }: AdminModalProps) {
           </div>
 
           {/* Scrollable content */}
-          <div className="overflow-y-auto flex-1 p-4 admin-scrollbar space-y-4">
+          <div className="overflow-y-auto flex-1 p-3 sm:p-4 admin-scrollbar space-y-3 sm:space-y-4">
             {!authorized ? (
               <form onSubmit={handleLogin} className="space-y-3">
                 <p className="text-dg-muted">Enter admin password.</p>
@@ -257,17 +257,17 @@ export function AdminModal({ open, onClose }: AdminModalProps) {
             )}
           </div>
 
-          {/* Footer */}
+          {/* Footer — always visible, safe area padding on mobile */}
           {authorized && (
-            <div className="flex gap-2 px-4 py-3 border-t border-dg-border shrink-0">
+            <div className="flex gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-t border-dg-border shrink-0 bg-dg-bg/90 backdrop-blur-sm" style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}>
               <button type="button" onClick={() => { if (confirm('Reset all progress?')) adminActions.resetJourney(); }}
-                className="px-3 py-1.5 border border-dg-red/40 text-dg-red rounded-full text-[10px] uppercase tracking-[0.2em] font-mono hover:bg-dg-red/10 transition-colors">Reset</button>
+                className="px-2.5 sm:px-3 py-1.5 border border-dg-red/40 text-dg-red rounded-full text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-mono hover:bg-dg-red/10 transition-colors">Reset</button>
               <button type="button" onClick={handleSave}
-                className={`px-4 py-1.5 rounded-full text-[10px] uppercase tracking-[0.2em] font-mono transition-colors ${
+                className={`px-3 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-mono transition-colors ${
                   saved ? 'border border-dg-green bg-dg-green/15 text-dg-green' : 'border border-dg-accent bg-dg-accent/10 text-dg-accent hover:bg-dg-accent/20'
                 }`}>{saved ? 'Saved' : 'Save'}</button>
               <button type="button" onClick={onClose}
-                className="px-3 py-1.5 border border-dg-border rounded-full text-[10px] uppercase tracking-[0.2em] font-mono text-dg-muted hover:border-dg-accent hover:text-dg-accent transition-colors ml-auto">Close</button>
+                className="px-2.5 sm:px-3 py-1.5 border border-dg-border rounded-full text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-mono text-dg-muted hover:border-dg-accent hover:text-dg-accent transition-colors ml-auto">Close</button>
             </div>
           )}
         </div>

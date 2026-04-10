@@ -12,8 +12,10 @@ import { motion } from 'framer-motion';
 
 export default function Home() {
   const { currentPuzzle, puzzles, progress } = usePuzzleContext();
-  const [introComplete, setIntroComplete] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
+  // Skip intro if Dave already has progress (returning from another device/browser)
+  const hasPriorProgress = Object.keys(progress.solved).length > 0;
+  const [introComplete, setIntroComplete] = useState(hasPriorProgress);
+  const [hasStarted, setHasStarted] = useState(hasPriorProgress);
   const [adminOpen, setAdminOpen] = useState(false);
   const [introCountdown, setIntroCountdown] = useState(Math.ceil(INTRO_DURATION_MS / 1000));
   const totalPuzzles = puzzles.length;

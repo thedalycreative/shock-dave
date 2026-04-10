@@ -25,7 +25,7 @@ export function Layout({ children, onAdminOpen, onDashboard, showProgress }: Lay
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className={`relative z-10 max-w-2xl mx-auto w-full px-4 pt-18 ${showProgress ? 'pb-20' : 'pb-8'}`}
+        className={`relative z-10 max-w-3xl mx-auto w-full px-4 sm:px-6 pt-18 ${showProgress ? 'pb-20' : 'pb-8'}`}
         style={{ paddingTop: '4.5rem' }}
       >
         {children}
@@ -35,7 +35,7 @@ export function Layout({ children, onAdminOpen, onDashboard, showProgress }: Lay
       {showProgress && (
         <div className="fixed bottom-0 left-0 right-0 z-50">
           <div className="backdrop-blur-xl bg-dg-bg/80 border-t border-dg-border/40">
-            <div className="max-w-2xl mx-auto px-4 py-3">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] font-mono text-dg-muted uppercase tracking-widest">
                   Progress

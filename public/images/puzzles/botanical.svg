@@ -1,11 +1,112 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
-  <path d="M100 140 L100 90" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <path d="M100 90 L75 40" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <path d="M100 90 L100 30" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <path d="M100 90 L125 40" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <path d="M75 40 Q60 20 70 15 Q80 10 85 30 Q87 38 75 40Z" stroke="#c8a45a" stroke-width="1.5" fill="#c8a45a" fill-opacity="0.12"/>
-  <path d="M100 30 Q90 10 100 8 Q110 10 100 30Z" stroke="#c8a45a" stroke-width="1.5" fill="#c8a45a" fill-opacity="0.12"/>
-  <path d="M125 40 Q140 20 130 15 Q120 10 115 30 Q113 38 125 40Z" stroke="#c8a45a" stroke-width="1.5" fill="#c8a45a" fill-opacity="0.12"/>
-  <line x1="70" y1="27" x2="78" y2="35" stroke="#c8a45a" stroke-width="0.8" opacity="0.5"/>
-  <line x1="130" y1="27" x2="122" y2="35" stroke="#c8a45a" stroke-width="0.8" opacity="0.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3a332b"/>
+      <stop offset="100%" stop-color="#1a1612"/>
+    </linearGradient>
+    <radialGradient id="orchidGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ede8dd"/>
+      <stop offset="40%" stop-color="#e8d5a3"/>
+      <stop offset="100%" stop-color="#c8a45a"/>
+    </radialGradient>
+    <radialGradient id="orchidCenter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c8a45a"/>
+      <stop offset="100%" stop-color="#3a332b"/>
+    </radialGradient>
+    <linearGradient id="palmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3a332b" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#1a1612" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="#0d0b08"/>
+  <!-- Background foliage glow -->
+  <ellipse cx="200" cy="150" rx="160" ry="130" fill="#c8a45a" opacity="0.03"/>
+  <!-- Large monstera leaf - back left -->
+  <g transform="translate(30,20)">
+    <path d="M120,250 Q100,200 80,150 Q60,100 90,60 Q110,35 140,50 Q160,60 150,90 Q140,120 150,150 Q160,180 140,210 Q130,230 120,250" fill="url(#leafGrad)" stroke="#c8a45a" stroke-width="1"/>
+    <!-- Monstera holes -->
+    <ellipse cx="110" cy="100" rx="8" ry="12" fill="#0d0b08" stroke="#c8a45a" stroke-width="0.3"/>
+    <ellipse cx="125" cy="140" rx="6" ry="10" fill="#0d0b08" stroke="#c8a45a" stroke-width="0.3"/>
+    <ellipse cx="100" cy="170" rx="7" ry="9" fill="#0d0b08" stroke="#c8a45a" stroke-width="0.3"/>
+    <!-- Splits -->
+    <path d="M90,80 L70,65" fill="none" stroke="#0d0b08" stroke-width="3"/>
+    <path d="M85,120 L60,110" fill="none" stroke="#0d0b08" stroke-width="2.5"/>
+    <path d="M95,200 L75,195" fill="none" stroke="#0d0b08" stroke-width="2"/>
+    <!-- Vein lines -->
+    <path d="M120,250 Q110,200 95,150 Q80,100 100,65" fill="none" stroke="#c8a45a" stroke-width="0.6" opacity="0.4"/>
+    <path d="M105,100 Q115,110 110,130" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.3"/>
+    <path d="M115,75 Q100,85 95,100" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.3"/>
+    <path d="M130,160 Q115,170 105,185" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.3"/>
+    <path d="M125,195 Q112,200 108,215" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.25"/>
+  </g>
+  <!-- Palm frond - right back -->
+  <g transform="translate(250,10)" opacity="0.6">
+    <path d="M50,260 Q60,200 80,140 Q95,90 120,50 Q130,35 135,30" fill="none" stroke="#c8a45a" stroke-width="1.2"/>
+    <!-- Individual palm leaves -->
+    <path d="M120,50 Q140,40 150,25" fill="none" stroke="#3a332b" stroke-width="4"/>
+    <path d="M120,50 Q140,40 150,25" fill="none" stroke="#c8a45a" stroke-width="0.4"/>
+    <path d="M110,65 Q135,55 148,40" fill="none" stroke="#3a332b" stroke-width="3.5"/>
+    <path d="M110,65 Q135,55 148,40" fill="none" stroke="#c8a45a" stroke-width="0.4"/>
+    <path d="M100,85 Q130,72 145,58" fill="none" stroke="#3a332b" stroke-width="3"/>
+    <path d="M100,85 Q130,72 145,58" fill="none" stroke="#c8a45a" stroke-width="0.3"/>
+    <path d="M92,105 Q120,90 140,78" fill="none" stroke="#3a332b" stroke-width="3"/>
+    <path d="M92,105 Q120,90 140,78" fill="none" stroke="#c8a45a" stroke-width="0.3"/>
+    <path d="M85,125 Q110,112 130,100" fill="none" stroke="#3a332b" stroke-width="2.5"/>
+    <path d="M85,125 Q110,112 130,100" fill="none" stroke="#c8a45a" stroke-width="0.3"/>
+    <!-- Left side leaves -->
+    <path d="M115,55 Q95,42 80,35" fill="none" stroke="#3a332b" stroke-width="3"/>
+    <path d="M115,55 Q95,42 80,35" fill="none" stroke="#c8a45a" stroke-width="0.3"/>
+    <path d="M105,75 Q85,62 68,55" fill="none" stroke="#3a332b" stroke-width="2.5"/>
+    <path d="M105,75 Q85,62 68,55" fill="none" stroke="#c8a45a" stroke-width="0.3"/>
+    <path d="M95,95 Q75,85 58,80" fill="none" stroke="#3a332b" stroke-width="2"/>
+    <path d="M95,95 Q75,85 58,80" fill="none" stroke="#c8a45a" stroke-width="0.3"/>
+  </g>
+  <!-- Second monstera - right side partial -->
+  <g transform="translate(280,100)" opacity="0.4">
+    <path d="M100,180 Q90,140 85,100 Q80,60 100,30 Q115,15 120,25 Q125,40 110,60 Q100,80 105,110 Q110,140 100,170" fill="url(#leafGrad)" stroke="#c8a45a" stroke-width="0.8"/>
+    <ellipse cx="105" cy="70" rx="5" ry="8" fill="#0d0b08" stroke="#c8a45a" stroke-width="0.2"/>
+    <ellipse cx="98" cy="110" rx="4" ry="7" fill="#0d0b08" stroke="#c8a45a" stroke-width="0.2"/>
+    <path d="M100,180 Q95,140 92,100 Q88,65 105,35" fill="none" stroke="#c8a45a" stroke-width="0.4" opacity="0.3"/>
+  </g>
+  <!-- Orchid bloom - center -->
+  <g transform="translate(200,135)">
+    <!-- Back petals -->
+    <path d="M0,-40 Q-15,-35 -20,-20 Q-22,-5 -10,0 Q0,-5 10,0 Q22,-5 20,-20 Q15,-35 0,-40" fill="url(#orchidGrad)" stroke="#c8a45a" stroke-width="0.8" opacity="0.7"/>
+    <!-- Side petals -->
+    <path d="M-10,0 Q-30,-10 -40,0 Q-42,15 -30,20 Q-15,22 -5,10 Z" fill="url(#orchidGrad)" stroke="#c8a45a" stroke-width="0.8"/>
+    <path d="M10,0 Q30,-10 40,0 Q42,15 30,20 Q15,22 5,10 Z" fill="url(#orchidGrad)" stroke="#c8a45a" stroke-width="0.8"/>
+    <!-- Front petal (lip) -->
+    <path d="M0,5 Q-15,15 -18,30 Q-15,42 0,45 Q15,42 18,30 Q15,15 0,5" fill="url(#orchidGrad)" stroke="#c8a45a" stroke-width="0.8"/>
+    <!-- Lip detail -->
+    <path d="M-8,20 Q0,15 8,20 Q12,28 0,32 Q-12,28 -8,20" fill="url(#orchidCenter)" stroke="#c8a45a" stroke-width="0.5"/>
+    <!-- Petal veins -->
+    <path d="M0,-35 Q-5,-20 -5,0" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.4"/>
+    <path d="M0,-35 Q5,-20 5,0" fill="none" stroke="#c8a45a" stroke-width="0.3" opacity="0.4"/>
+    <path d="M-20,5 Q-15,10 -8,12" fill="none" stroke="#c8a45a" stroke-width="0.2" opacity="0.3"/>
+    <path d="M20,5 Q15,10 8,12" fill="none" stroke="#c8a45a" stroke-width="0.2" opacity="0.3"/>
+    <path d="M0,10 Q-5,25 -5,35" fill="none" stroke="#c8a45a" stroke-width="0.2" opacity="0.3"/>
+    <path d="M0,10 Q5,25 5,35" fill="none" stroke="#c8a45a" stroke-width="0.2" opacity="0.3"/>
+    <!-- Center column -->
+    <ellipse cx="0" cy="5" rx="3" ry="4" fill="#c8a45a" stroke="#3a332b" stroke-width="0.3"/>
+    <!-- Pollinia dots -->
+    <circle cx="-1" cy="3" r="1" fill="#ede8dd" opacity="0.6"/>
+    <circle cx="1" cy="3" r="1" fill="#ede8dd" opacity="0.6"/>
+  </g>
+  <!-- Orchid stem -->
+  <path d="M200,180 Q195,210 198,250 Q200,270 195,290" fill="none" stroke="#3a332b" stroke-width="2"/>
+  <path d="M200,180 Q195,210 198,250 Q200,270 195,290" fill="none" stroke="#c8a45a" stroke-width="0.5" opacity="0.5"/>
+  <!-- Small bud -->
+  <g transform="translate(185,200)" opacity="0.5">
+    <path d="M0,0 Q-5,-8 0,-15 Q5,-8 0,0" fill="#3a332b" stroke="#c8a45a" stroke-width="0.5"/>
+  </g>
+  <!-- Thin decorative leaf - bottom left -->
+  <g transform="translate(20,230)" opacity="0.3">
+    <path d="M0,0 Q20,-20 50,-15 Q70,-10 80,10 Q60,5 40,8 Q20,12 0,0" fill="#3a332b" stroke="#c8a45a" stroke-width="0.5"/>
+    <path d="M0,0 Q40,-5 80,10" fill="none" stroke="#c8a45a" stroke-width="0.3"/>
+  </g>
+  <!-- Corner accents -->
+  <path d="M10,10 L30,10 M10,10 L10,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,10 L370,10 M390,10 L390,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M10,290 L30,290 M10,290 L10,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,290 L370,290 M390,290 L390,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
 </svg>

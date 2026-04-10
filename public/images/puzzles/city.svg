@@ -1,20 +1,113 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
-  <rect x="20" y="70" width="25" height="70" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <rect x="50" y="40" width="20" height="100" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <rect x="75" y="55" width="22" height="85" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <rect x="102" y="25" width="18" height="115" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <rect x="125" y="50" width="25" height="90" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <rect x="155" y="65" width="22" height="75" stroke="#c8a45a" stroke-width="1.5" fill="none"/>
-  <circle cx="32" cy="85" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="32" cy="100" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="60" cy="55" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="60" cy="70" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="60" cy="85" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="111" cy="40" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="111" cy="55" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="111" cy="70" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="137" cy="65" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="137" cy="80" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <circle cx="166" cy="80" r="1.5" fill="#c8a45a" opacity="0.6"/>
-  <line x1="15" y1="140" x2="185" y2="140" stroke="#c8a45a" stroke-width="1.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1612"/><stop offset="100%" stop-color="#0d0b08"/>
+    </linearGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="30%" r="30%">
+      <stop offset="0%" stop-color="#c8a45a" stop-opacity="0.08"/><stop offset="100%" stop-color="#c8a45a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#skyGrad)"/>
+  <ellipse cx="320" cy="50" rx="80" ry="60" fill="url(#moonGlow)"/>
+  <!-- Moon -->
+  <circle cx="330" cy="40" r="12" fill="#c8a45a" fill-opacity="0.1" stroke="#c8a45a" stroke-width="0.5" opacity="0.4"/>
+  <!-- Stars -->
+  <g fill="#c8a45a" opacity="0.25">
+    <circle cx="50" cy="30" r="1"/><circle cx="120" cy="20" r="0.8"/><circle cx="200" cy="15" r="1.2"/>
+    <circle cx="270" cy="35" r="0.7"/><circle cx="380" cy="25" r="0.9"/><circle cx="160" cy="45" r="0.6"/>
+    <circle cx="90" cy="55" r="0.8"/><circle cx="350" cy="65" r="0.7"/>
+  </g>
+  <!-- Ground line -->
+  <line x1="0" y1="230" x2="400" y2="230" stroke="#3a332b" stroke-width="0.5"/>
+  <rect x="0" y="230" width="400" height="70" fill="#0d0b08"/>
+  <!-- Tram tracks -->
+  <line x1="0" y1="242" x2="400" y2="242" stroke="#c8a45a" stroke-width="0.4" opacity="0.2"/>
+  <line x1="0" y1="245" x2="400" y2="245" stroke="#c8a45a" stroke-width="0.4" opacity="0.2"/>
+  <!-- Tram wires above -->
+  <path d="M0,120 Q100,115 200,118 Q300,121 400,116" stroke="#c8a45a" stroke-width="0.3" opacity="0.15"/>
+  <!-- Flinders St Station (center-left) -->
+  <g stroke="#c8a45a" fill="#1a1612">
+    <!-- Main building -->
+    <rect x="90" y="140" width="120" height="90" stroke-width="0.8"/>
+    <!-- Clock tower -->
+    <rect x="135" y="70" width="40" height="70" stroke-width="0.8"/>
+    <!-- Dome on tower -->
+    <path d="M135,70 Q155,40 175,70" stroke-width="0.8" fill="#1a1612"/>
+    <!-- Spire -->
+    <line x1="155" y1="40" x2="155" y2="25" stroke-width="1"/>
+    <!-- Clock face -->
+    <circle cx="155" cy="90" r="10" fill="none" stroke-width="0.6"/>
+    <line x1="155" y1="83" x2="155" y2="88" stroke-width="0.5"/><line x1="155" y1="92" x2="155" y2="97" stroke-width="0.5"/>
+    <line x1="148" y1="90" x2="152" y2="90" stroke-width="0.5"/><line x1="158" y1="90" x2="163" y2="90" stroke-width="0.5"/>
+    <!-- Clock hands -->
+    <line x1="155" y1="90" x2="155" y2="84" stroke-width="0.6"/><line x1="155" y1="90" x2="160" y2="88" stroke-width="0.4"/>
+    <!-- Arched entrance windows -->
+    <path d="M100,190 Q100,175 110,175 Q120,175 120,190" fill="none" stroke-width="0.6"/>
+    <path d="M125,190 Q125,175 135,175 Q145,175 145,190" fill="none" stroke-width="0.6"/>
+    <path d="M155,190 Q155,175 165,175 Q175,175 175,190" fill="none" stroke-width="0.6"/>
+    <path d="M180,190 Q180,175 190,175 Q200,175 200,190" fill="none" stroke-width="0.6"/>
+    <!-- Upper windows -->
+    <g stroke-width="0.4" opacity="0.5">
+      <rect x="100" y="148" width="8" height="12" fill="none"/><rect x="115" y="148" width="8" height="12" fill="none"/>
+      <rect x="130" y="148" width="8" height="12" fill="none"/><rect x="165" y="148" width="8" height="12" fill="none"/>
+      <rect x="180" y="148" width="8" height="12" fill="none"/><rect x="195" y="148" width="8" height="12" fill="none"/>
+    </g>
+    <!-- Window glow -->
+    <g fill="#c8a45a" opacity="0.06">
+      <rect x="101" y="149" width="6" height="10"/><rect x="166" y="149" width="6" height="10"/>
+      <rect x="181" y="149" width="6" height="10"/>
+    </g>
+  </g>
+  <!-- Modern tower (right) -->
+  <rect x="270" y="55" width="35" height="175" fill="#1a1612" stroke="#c8a45a" stroke-width="0.6"/>
+  <g stroke="#c8a45a" stroke-width="0.3" opacity="0.3">
+    <line x1="275" y1="65" x2="300" y2="65"/><line x1="275" y1="80" x2="300" y2="80"/>
+    <line x1="275" y1="95" x2="300" y2="95"/><line x1="275" y1="110" x2="300" y2="110"/>
+    <line x1="275" y1="125" x2="300" y2="125"/><line x1="275" y1="140" x2="300" y2="140"/>
+    <line x1="275" y1="155" x2="300" y2="155"/><line x1="275" y1="170" x2="300" y2="170"/>
+    <line x1="275" y1="185" x2="300" y2="185"/><line x1="275" y1="200" x2="300" y2="200"/>
+    <line x1="275" y1="215" x2="300" y2="215"/>
+  </g>
+  <!-- Warehouse buildings (right) -->
+  <rect x="315" y="120" width="45" height="110" fill="#1a1612" stroke="#c8a45a" stroke-width="0.5"/>
+  <g stroke="#c8a45a" stroke-width="0.3" opacity="0.4">
+    <rect x="320" y="130" width="10" height="15" fill="none"/><rect x="335" y="130" width="10" height="15" fill="none"/>
+    <rect x="320" y="155" width="10" height="15" fill="none"/><rect x="335" y="155" width="10" height="15" fill="none"/>
+    <rect x="320" y="180" width="10" height="15" fill="none"/><rect x="335" y="180" width="10" height="15" fill="none"/>
+  </g>
+  <!-- Low warehouse (far right) -->
+  <rect x="365" y="170" width="35" height="60" fill="#1a1612" stroke="#c8a45a" stroke-width="0.4"/>
+  <!-- Left buildings -->
+  <rect x="30" y="150" width="50" height="80" fill="#1a1612" stroke="#c8a45a" stroke-width="0.5"/>
+  <g stroke="#c8a45a" stroke-width="0.3" opacity="0.35">
+    <rect x="35" y="158" width="8" height="10" fill="none"/><rect x="50" y="158" width="8" height="10" fill="none"/>
+    <rect x="65" y="158" width="8" height="10" fill="none"/><rect x="35" y="178" width="8" height="10" fill="none"/>
+    <rect x="50" y="178" width="8" height="10" fill="none"/><rect x="65" y="178" width="8" height="10" fill="none"/>
+  </g>
+  <!-- Laneway elements -->
+  <g stroke="#c8a45a" stroke-width="0.4" opacity="0.15">
+    <!-- Cobblestone hints -->
+    <circle cx="100" cy="250" r="2" fill="none"/><circle cx="115" cy="255" r="2" fill="none"/>
+    <circle cx="130" cy="248" r="2" fill="none"/><circle cx="145" cy="253" r="2" fill="none"/>
+    <circle cx="200" cy="252" r="2" fill="none"/><circle cx="250" cy="248" r="2" fill="none"/>
+  </g>
+  <!-- Street lamp -->
+  <g transform="translate(240,170)" stroke="#c8a45a" fill="none" opacity="0.4">
+    <line x1="0" y1="0" x2="0" y2="60" stroke-width="1"/>
+    <path d="M-6,0 Q0,-8 6,0" stroke-width="0.8"/>
+    <ellipse cx="0" cy="-2" rx="4" ry="3" fill="#c8a45a" fill-opacity="0.1"/>
+  </g>
+  <!-- Tram silhouette -->
+  <g transform="translate(50,225)" stroke="#c8a45a" fill="#1a1612" opacity="0.35" stroke-width="0.5">
+    <rect x="0" y="0" width="50" height="18" rx="3"/>
+    <rect x="5" y="2" width="10" height="10" rx="1" fill="none"/><rect x="18" y="2" width="10" height="10" rx="1" fill="none"/>
+    <rect x="33" y="2" width="10" height="10" rx="1" fill="none"/>
+    <circle cx="10" cy="20" r="3" fill="none"/><circle cx="40" cy="20" r="3" fill="none"/>
+    <line x1="25" y1="0" x2="25" y2="-15" stroke-width="0.4"/>
+  </g>
+  <!-- Corner accents -->
+  <path d="M10,10 L30,10 M10,10 L10,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,10 L370,10 M390,10 L390,30" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M10,290 L30,290 M10,290 L10,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
+  <path d="M390,290 L370,290 M390,290 L390,270" stroke="#c8a45a" stroke-width="1" opacity="0.3"/>
 </svg>
