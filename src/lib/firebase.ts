@@ -37,10 +37,19 @@ export type AdminMetricsResult = {
   penaltyTimers: Record<PuzzleId, number>;
 };
 
+/**
+ * Returns a fixed session ID so progress syncs across browsers/devices.
+ * Dave is the only player, so a single deterministic ID is all we need.
+ * Falls back to a random UUID stored in localStorage if needed.
+ */
 export function generateSessionToken() {
+  const FIXED_SESSION = 'dave-main-game';
+  // Migrate any old random session to the fixed one
   const existing = localStorage.getItem('gift-session');
-  if (existing) return existing;
-  const token = crypto.randomUUID();
-  localStorage.setItem('gift-session', token);
-  return token;
+  if (existing && existing !== FIXED_SESSION) {
+    localStorage.setItem('gift-session', FIXED_SESSION);
+  } else if (!existing) {
+    localStorage.setItem('gift-session', FIXED_SESSION);
+  }
+  return FIXED_SESSION;
 }

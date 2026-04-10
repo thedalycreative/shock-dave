@@ -1,58 +1,73 @@
-import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 
 const LINES = [
-  { text: 'Perspective & Puzzle', size: 14, uppercase: true },
-  { text: 'A slow reveal awaits', size: 36 },
-  { text: 'Playful, cryptic, intentional.', size: 24 },
+  { text: 'Oi, Dave.', delay: 0, accent: false, bold: true },
+  { text: 'Yeah, you.', delay: 1000, accent: false, bold: false },
+  { text: 'We both know you\'re not the sharpest tool in the shed...', delay: 2400, accent: false, bold: false },
+  { text: 'But you ARE the most loveable.', delay: 4200, accent: true, bold: true },
+  { text: 'So here\'s 25 puzzles.', delay: 5800, accent: false, bold: false },
+  { text: 'Solve them all and unlock something special.', delay: 7000, accent: false, bold: false },
+  { text: 'No pressure. Just vibes. And a timer. And penalties.', delay: 8400, accent: false, bold: false },
+  { text: 'Good luck, legend.', delay: 9800, accent: true, bold: true },
 ];
+
+const TOTAL_MS = LINES[LINES.length - 1].delay + 1500; // ~11300ms
+export const INTRO_DURATION_MS = TOTAL_MS;
 
 interface IntroSequenceProps {
   onComplete: () => void;
 }
 
 export function IntroSequence({ onComplete }: IntroSequenceProps) {
-  const [phase, setPhase] = useState(0);
-  const done = phase >= LINES.length;
+  const [visibleLines, setVisibleLines] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(Math.ceil(TOTAL_MS / 1000));
+  const [done, setDone] = useState(false);
+  const startRef = useRef(Date.now());
 
   useEffect(() => {
-    if (phase < LINES.length) {
-      const timer = window.setTimeout(() => setPhase((prev) => prev + 1), 900);
-      return () => window.clearTimeout(timer);
-    }
-    const finish = window.setTimeout(onComplete, 800);
-    return () => window.clearTimeout(finish);
-  }, [phase, onComplete]);
+    startRef.current = Date.now();
+    const timers: number[] = [];
+    LINES.forEach((line, i) => {
+      timers.push(window.setTimeout(() => setVisibleLines(i + 1), line.delay));
+    });
+    timers.push(window.setTimeout(() => {
+      setDone(true);
+      setSecondsLeft(0);
+      onComplete();
+    }, TOTAL_MS));
 
-  const animations = useMemo(
-    () =>
-      LINES.map((_, index) => ({
-        delay: index * 0.2,
-      })),
-    []
-  );
+    const tick = window.setInterval(() => {
+      const elapsed = Date.now() - startRef.current;
+      const remaining = Math.max(0, Math.ceil((TOTAL_MS - elapsed) / 1000));
+      setSecondsLeft(remaining);
+    }, 300);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      clearInterval(tick);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <div className="space-y-6 text-center w-full mt-6">
-      {LINES.map((line, index) => (
-        <motion.div
-          key={line.text}
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: phase > index ? 1 : 0, y: phase > index ? 0 : 18 }}
-          transition={{ duration: 0.8, delay: animations[index].delay }}
-          className={`font-serif font-light ${line.uppercase ? 'uppercase tracking-[0.45em]' : ''}`}
-          style={{ fontSize: `${line.size}px` }}
-        >
-          {line.text}
-        </motion.div>
-      ))}
-      <motion.span
-        className="text-[12px] tracking-[0.4em] uppercase text-dg-accent inline-flex items-center justify-center"
-        animate={{ opacity: done ? 1 : 0.25 }}
-        transition={{ duration: 0.6 }}
-      >
-        {done ? 'Ready to begin' : 'Setting the stage'}
-      </motion.span>
+    <div className="space-y-3 text-center w-full py-2 min-h-[240px] flex flex-col items-center justify-center">
+      <AnimatePresence>
+        {LINES.slice(0, visibleLines).map((line) => (
+          <motion.p
+            key={line.text}
+            initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className={`text-base leading-relaxed ${
+              line.accent ? 'text-dg-accent' : 'text-dg-fg/70'
+            } ${line.bold ? 'font-serif text-lg' : 'font-mono text-sm'}`}
+          >
+            {line.text}
+          </motion.p>
+        ))}
+      </AnimatePresence>
+{/* Countdown moved to parent button */}
     </div>
   );
 }

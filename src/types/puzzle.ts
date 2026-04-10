@@ -1,6 +1,6 @@
 export type PuzzleId = `${number}`;
 
-export type PuzzleType = 'text' | 'choice' | 'slider' | 'selection' | 'number' | 'dual-slider';
+export type PuzzleType = 'text' | 'choice' | 'slider' | 'selection' | 'number' | 'dual-slider' | 'dropdown' | 'counter' | 'image-tap' | 'ordered';
 
 export interface PuzzleConfig {
   id: PuzzleId;
@@ -10,6 +10,12 @@ export interface PuzzleConfig {
   description?: string;
   type: PuzzleType;
   options?: string[];
+  counterMin?: number;
+  counterMax?: number;
+  counterStep?: number;
+  counterUnit?: string;
+  imageTapSrc?: string;
+  imageTapZones?: { label: string; x: number; y: number; w: number; h: number }[];
   answerHash: string;
   demoAnswer?: string;
   hints: [

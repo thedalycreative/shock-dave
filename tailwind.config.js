@@ -7,15 +7,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        'dg-bg': '#0d0b08',
-        'dg-bg2': '#141109',
-        'dg-fg': '#ede8dd',
-        'dg-accent': '#c8a45a',
-        'dg-adim': 'rgba(200,164,90,0.12)',
-        'dg-muted': '#5a5347',
-        'dg-border': '#2a2519',
-        'dg-red': '#c84848',
-        'dg-green': '#5a9e6a',
+        'dg-bg': 'rgb(var(--bg) / <alpha-value>)',
+        'dg-bg2': 'rgb(var(--bg2) / <alpha-value>)',
+        'dg-fg': 'rgb(var(--fg) / <alpha-value>)',
+        'dg-accent': 'rgb(var(--accent) / <alpha-value>)',
+        'dg-muted': 'rgb(var(--muted) / <alpha-value>)',
+        'dg-border': 'rgb(var(--border) / <alpha-value>)',
+        'dg-red': 'rgb(var(--red) / <alpha-value>)',
+        'dg-green': 'rgb(var(--green) / <alpha-value>)',
       },
       fontFamily: {
         serif: ['DM Serif Display', 'Georgia', 'serif'],

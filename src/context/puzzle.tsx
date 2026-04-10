@@ -99,21 +99,27 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         ...data,
       }));
+    }, (error) => {
+      console.warn('Snapshot listener failed, using local state', error);
     });
     return () => unsub();
   }, [isFirebaseEnabled, sessionId]);
 
   const ensureSessionDoc = async () => {
     if (!isFirebaseEnabled || typeof window === 'undefined') return;
-    const sessionDoc = doc(sessionsCollection, sessionId);
-    const snapshot = await getDoc(sessionDoc);
-    if (!snapshot.exists()) {
-      await setDoc(sessionDoc, {
-        ...initialProgress,
-        sessionId,
-        sessionStart: Date.now(),
-        lastUpdated: Date.now(),
-      });
+    try {
+      const sessionDoc = doc(sessionsCollection, sessionId);
+      const snapshot = await getDoc(sessionDoc);
+      if (!snapshot.exists()) {
+        await setDoc(sessionDoc, {
+          ...initialProgress,
+          sessionId,
+          sessionStart: Date.now(),
+          lastUpdated: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.warn('Firebase session init failed, using local state', error);
     }
   };
 
@@ -126,12 +132,13 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
       const solved = { ...prev.solved, [id]: timestamp };
       const nextIndex = Math.min(samplePuzzles.length - 1, order.indexOf(id) + 1);
       const nextPuzzle = order[nextIndex];
+      const timing = getEffectiveTiming(currentPuzzle);
       return {
         ...prev,
         solved,
         currentPuzzle: nextPuzzle ?? prev.currentPuzzle,
-        penaltyExpiresAt: timestamp + currentPuzzle.penaltyBase * 1000,
-        cooldownExpiresAt: timestamp + currentPuzzle.cooldownMin * 1000,
+        penaltyExpiresAt: 0,
+        cooldownExpiresAt: timestamp + timing.cooldownMin * 1000,
         lastUpdated: timestamp,
       };
     });
@@ -141,8 +148,9 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
     setProgress((prev) => {
       const attempts = (prev.incorrectAttempts[id] ?? 0) + 1;
       const puzzle = samplePuzzles.find((p) => p.id === id) ?? currentPuzzle;
+      const timing = getEffectiveTiming(puzzle);
       const penalty =
-        Math.max(prev.penaltyExpiresAt, timestamp) + puzzle.penaltyIncrement * 1000;
+        Math.max(prev.penaltyExpiresAt, timestamp) + timing.penaltyIncrement * 1000;
       return {
         ...prev,
         incorrectAttempts: { ...prev.incorrectAttempts, [id]: attempts },
@@ -156,9 +164,10 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
     setProgress((prev) => {
       const used = (prev.hintsUsed[id] ?? 0) + 1;
       const puzzle = samplePuzzles.find((p) => p.id === id) ?? currentPuzzle;
+      const timing = getEffectiveTiming(puzzle);
       const penalty =
         Math.max(prev.penaltyExpiresAt, timestamp) +
-        puzzle.penaltyBase * puzzle.penaltyMultiplierOnHint * 1000;
+        timing.penaltyBase * timing.penaltyMultiplierOnHint * 1000;
       return {
         ...prev,
         hintsUsed: { ...prev.hintsUsed, [id]: used },
@@ -173,14 +182,15 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
     if (!isFirebaseEnabled) {
       const puzzle = samplePuzzles.find((p) => p.id === id);
       if (!puzzle) return false;
+      const timing = getEffectiveTiming(puzzle);
       const normalized = attempt.toLowerCase().trim();
       if (puzzle.demoAnswer && normalized === puzzle.demoAnswer.toLowerCase()) {
         applySolved(id, timestamp);
         await persistSession({
           solved: { ...progress.solved, [id]: timestamp },
           currentPuzzle: order[Math.min(order.length - 1, order.indexOf(id) + 1)],
-          penaltyExpiresAt: timestamp + puzzle.penaltyBase * 1000,
-          cooldownExpiresAt: timestamp + puzzle.cooldownMin * 1000,
+          penaltyExpiresAt: 0,
+          cooldownExpiresAt: timestamp + timing.cooldownMin * 1000,
         });
         return true;
       }
@@ -190,7 +200,7 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
           ...progress.incorrectAttempts,
           [id]: (progress.incorrectAttempts[id] ?? 0) + 1,
         },
-        penaltyExpiresAt: Math.max(progress.penaltyExpiresAt, timestamp) + puzzle.penaltyIncrement * 1000,
+        penaltyExpiresAt: Math.max(progress.penaltyExpiresAt, timestamp) + timing.penaltyIncrement * 1000,
       });
       return false;
     }
@@ -230,7 +240,30 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
       });
       return false;
     } catch (error) {
-      console.warn('Validation failed', error);
+      console.warn('Validation failed, falling back to local check', error);
+      // Fallback to local validation when Firebase callable fails
+      const puzzle = samplePuzzles.find((p) => p.id === id);
+      if (!puzzle) return false;
+      const timing = getEffectiveTiming(puzzle);
+      const normalized = attempt.toLowerCase().trim();
+      if (puzzle.demoAnswer && normalized === puzzle.demoAnswer.toLowerCase()) {
+        applySolved(id, timestamp);
+        await persistSession({
+          solved: { ...progress.solved, [id]: timestamp },
+          currentPuzzle: order[Math.min(order.length - 1, order.indexOf(id) + 1)],
+          penaltyExpiresAt: 0,
+          cooldownExpiresAt: timestamp + timing.cooldownMin * 1000,
+        });
+        return true;
+      }
+      applyAttempt(id, timestamp);
+      await persistSession({
+        incorrectAttempts: {
+          ...progress.incorrectAttempts,
+          [id]: (progress.incorrectAttempts[id] ?? 0) + 1,
+        },
+        penaltyExpiresAt: Math.max(progress.penaltyExpiresAt, timestamp) + timing.penaltyIncrement * 1000,
+      });
       return false;
     }
   };
@@ -238,6 +271,7 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
   const requestHint = async (id: PuzzleId) => {
     const timestamp = Date.now();
     if (!isFirebaseEnabled) {
+      const timing = getEffectiveTiming(currentPuzzle);
       applyHint(id, timestamp);
       await persistSession({
         hintsUsed: {
@@ -246,7 +280,7 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
         },
         penaltyExpiresAt:
           Math.max(progress.penaltyExpiresAt, timestamp) +
-          currentPuzzle.penaltyBase * currentPuzzle.penaltyMultiplierOnHint * 1000,
+          timing.penaltyBase * timing.penaltyMultiplierOnHint * 1000,
       });
       return;
     }
@@ -267,12 +301,35 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
         penaltyExpiresAt: data.penaltyExpiresAt,
       });
     } catch (error) {
-      console.warn('Hint request failed', error);
+      console.warn('Hint request failed, falling back to local', error);
+      // Fallback to local hint when Firebase callable fails
+      const timing = getEffectiveTiming(currentPuzzle);
+      applyHint(id, timestamp);
+      await persistSession({
+        hintsUsed: {
+          ...progress.hintsUsed,
+          [id]: (progress.hintsUsed[id] ?? 0) + 1,
+        },
+        penaltyExpiresAt:
+          Math.max(progress.penaltyExpiresAt, timestamp) +
+          timing.penaltyBase * timing.penaltyMultiplierOnHint * 1000,
+      });
     }
   };
 
   const [disabledPuzzles, setDisabledPuzzles] = useState<Set<PuzzleId>>(new Set());
   const [puzzleTimingOverrides, setPuzzleTimingOverrides] = useState<Record<PuzzleId, { cooldownMin?: number; penaltyBase?: number; penaltyIncrement?: number }>>({});
+
+  /** Returns effective timing for a puzzle, with admin overrides applied */
+  const getEffectiveTiming = (puzzle: PuzzleConfig) => {
+    const o = puzzleTimingOverrides[puzzle.id] ?? {};
+    return {
+      penaltyBase: o.penaltyBase ?? puzzle.penaltyBase,
+      penaltyIncrement: o.penaltyIncrement ?? puzzle.penaltyIncrement,
+      cooldownMin: o.cooldownMin ?? puzzle.cooldownMin,
+      penaltyMultiplierOnHint: puzzle.penaltyMultiplierOnHint,
+    };
+  };
 
   const adminActions: AdminActions = useMemo(() => ({
     setPuzzleStatus: (id: PuzzleId, status: 'solved' | 'active' | 'locked') => {
@@ -319,6 +376,26 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
       persistSession({ ...progress, lastUpdated: Date.now() });
     },
   }), [sessionId]);
+
+  // Recalculate active cooldown when admin changes timing overrides
+  useEffect(() => {
+    setProgress((prev) => {
+      const now = Date.now();
+      if (prev.cooldownExpiresAt <= now) return prev;
+      // Find which puzzle was just solved to recalculate its cooldown
+      const currentIdx = order.indexOf(prev.currentPuzzle);
+      const prevPuzzleId = currentIdx > 0 ? order[currentIdx - 1] : null;
+      if (!prevPuzzleId || !prev.solved[prevPuzzleId]) return prev;
+      const solvedAt = prev.solved[prevPuzzleId];
+      const prevPuzzle = samplePuzzles.find((p) => p.id === prevPuzzleId);
+      if (!prevPuzzle) return prev;
+      const timing = getEffectiveTiming(prevPuzzle);
+      const newExpiry = solvedAt + timing.cooldownMin * 1000;
+      if (newExpiry === prev.cooldownExpiresAt) return prev;
+      return { ...prev, cooldownExpiresAt: newExpiry };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [puzzleTimingOverrides]);
 
   const value = useMemo(
     () => ({
