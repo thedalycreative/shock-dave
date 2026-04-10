@@ -66,4 +66,4 @@ Before you run `firebase deploy --only functions,firestore`, build the functions
 
 ---
 
-*Built with intention by Timothy.*
+*Built with intention by Tim.*

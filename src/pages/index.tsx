@@ -22,10 +22,10 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Perspective & Puzzle | Sense of Self Gift</title>
+        <title>Perspective & Puzzle</title>
         <meta
           name="description"
-          content="Premium interactive puzzle experience crafted as a slow reveal for Sense of Self."
+          content="A premium interactive puzzle experience — playful, cryptic, intentional."
         />
       </Head>
       <Layout>
@@ -46,7 +46,7 @@ export default function Home() {
               {startButtonLabel}
             </motion.button>
             <p className="text-[14px] text-dg-muted uppercase tracking-[0.4em]">
-              25 puzzles • one slow reveal • gift at the end
+              25 puzzles • one slow reveal
             </p>
           </section>
         ) : journeyComplete ? (

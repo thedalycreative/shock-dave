@@ -18,8 +18,8 @@ export default {
         'dg-green': '#5a9e6a',
       },
       fontFamily: {
-        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
-        mono: ['Noto Serif', 'serif'],
+        serif: ['DM Serif Display', 'Georgia', 'serif'],
+        mono: ['Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-up': 'fadeUp 0.6s ease forwards',

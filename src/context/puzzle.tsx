@@ -26,12 +26,22 @@ type PuzzleActions = {
   requestHint: (id: PuzzleId) => Promise<void>;
 };
 
+type AdminActions = {
+  setPuzzleStatus: (id: PuzzleId, status: 'solved' | 'active' | 'locked') => void;
+  updatePuzzleTiming: (id: PuzzleId, timing: { cooldownMin?: number; penaltyBase?: number; penaltyIncrement?: number }) => void;
+  togglePuzzle: (id: PuzzleId, enabled: boolean) => void;
+  resetJourney: () => void;
+};
+
 interface PuzzleContextValue {
   puzzles: PuzzleConfig[];
   currentPuzzle: PuzzleConfig;
   progress: SessionProgress;
   percentage: number;
   actions: PuzzleActions;
+  adminActions: AdminActions;
+  disabledPuzzles: Set<PuzzleId>;
+  puzzleTimingOverrides: Record<PuzzleId, { cooldownMin?: number; penaltyBase?: number; penaltyIncrement?: number }>;
 }
 
 const PuzzleContext = createContext<PuzzleContextValue | undefined>(undefined);
@@ -260,6 +270,52 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const [disabledPuzzles, setDisabledPuzzles] = useState<Set<PuzzleId>>(new Set());
+  const [puzzleTimingOverrides, setPuzzleTimingOverrides] = useState<Record<PuzzleId, { cooldownMin?: number; penaltyBase?: number; penaltyIncrement?: number }>>({});
+
+  const adminActions: AdminActions = useMemo(() => ({
+    setPuzzleStatus: (id: PuzzleId, status: 'solved' | 'active' | 'locked') => {
+      setProgress((prev) => {
+        const next = { ...prev };
+        if (status === 'solved') {
+          next.solved = { ...prev.solved, [id]: Date.now() };
+        } else if (status === 'active') {
+          const { [id]: _, ...rest } = prev.solved;
+          next.solved = rest;
+          next.currentPuzzle = id;
+          next.penaltyExpiresAt = 0;
+          next.cooldownExpiresAt = 0;
+        } else if (status === 'locked') {
+          const { [id]: _, ...rest } = prev.solved;
+          next.solved = rest;
+        }
+        next.lastUpdated = Date.now();
+        return next;
+      });
+    },
+    updatePuzzleTiming: (id: PuzzleId, timing: { cooldownMin?: number; penaltyBase?: number; penaltyIncrement?: number }) => {
+      setPuzzleTimingOverrides((prev) => ({
+        ...prev,
+        [id]: { ...(prev[id] ?? {}), ...timing },
+      }));
+    },
+    togglePuzzle: (id: PuzzleId, enabled: boolean) => {
+      setDisabledPuzzles((prev) => {
+        const next = new Set(prev);
+        if (enabled) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    },
+    resetJourney: () => {
+      setProgress({ ...initialProgress, sessionId, sessionStart: Date.now(), lastUpdated: Date.now() });
+      persistSession({ ...initialProgress, sessionId, sessionStart: Date.now(), lastUpdated: Date.now() });
+    },
+  }), [sessionId]);
+
   const value = useMemo(
     () => ({
       puzzles: samplePuzzles,
@@ -267,8 +323,11 @@ export function PuzzleProvider({ children }: { children: React.ReactNode }) {
       progress,
       percentage,
       actions: { submitAnswer, requestHint },
+      adminActions,
+      disabledPuzzles,
+      puzzleTimingOverrides,
     }),
-    [currentPuzzle, progress, percentage]
+    [currentPuzzle, progress, percentage, adminActions, disabledPuzzles, puzzleTimingOverrides]
   );
 
   return <PuzzleContext.Provider value={value}>{children}</PuzzleContext.Provider>;

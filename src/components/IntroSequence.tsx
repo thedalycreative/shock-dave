@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 const LINES = [
   { text: 'Perspective & Puzzle', size: 14, uppercase: true },
-  { text: 'A slow reveal for Sense of Self', size: 36 },
+  { text: 'A slow reveal awaits', size: 36 },
   { text: 'Playful, cryptic, intentional.', size: 24 },
 ];
 
