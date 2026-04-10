@@ -25,7 +25,7 @@ export function BodyMapInput({ clue, onCorrect }) {
         <svg viewBox="0 0 100 200" className="w-full h-full text-dg-muted opacity-30 pointer-events-none">
           <path fill="currentColor" d="M50 10c-5 0-9 4-9 9s4 9 9 9 9-4 9-9-4-9-9-9zm-10 20c-8 0-15 7-15 15v40c0 5 4 9 9 9h2v40c0 5 4 9 9 9s9-4 9-9V94h2c5 0 9-4 9-9V45c0-8-7-15-15-15H40zM35 150l5 40h10l5-40H35z" />
         </svg>
-        
+
         {clue.options.map(opt => (
           <button
             key={opt.id}
@@ -130,7 +130,7 @@ export function SelectionSlotsInput({ clue, onCorrect }) {
         </div>
         <GhostBtn onClick={submit} className="px-8 shrink-0" disabled={selected.length < clue.slots}>submit</GhostBtn>
       </div>
-      {wrong && <div className="text-center text-dg-red font-mono text-[13px] lowercase">those aren't the three. try again.</div>}
+      {wrong && <div className="text-center text-dg-red font-mono text-[13px] lowercase">those aren&rsquo;t the three. try again.</div>}
     </div>
   );
 }
@@ -270,8 +270,8 @@ export function BuildingsTilesInput({ clue, onCorrect }) {
   const cities = ["London", "Paris", "New York", "Vienna"];
 
   const selectTile = (val) => {
-     const isCity = cities.includes(val);
-     setSelectedTile({ val, type: isCity ? 'city' : 'name' });
+    const isCity = cities.includes(val);
+    setSelectedTile({ val, type: isCity ? 'city' : 'name' });
   };
 
   const place = (index, slotType) => {
@@ -290,9 +290,9 @@ export function BuildingsTilesInput({ clue, onCorrect }) {
 
   const usedTiles = placements.flatMap(p => [p.name, p.city]).filter(Boolean);
   const remainingTiles = clue.tiles.filter((t, i) => {
-     const instanceCount = clue.tiles.slice(0, i + 1).filter(x => x === t).length;
-     const usedCount = usedTiles.filter(x => x === t).length;
-     return usedCount < instanceCount;
+    const instanceCount = clue.tiles.slice(0, i + 1).filter(x => x === t).length;
+    const usedCount = usedTiles.filter(x => x === t).length;
+    return usedCount < instanceCount;
   });
 
   return (
@@ -301,30 +301,30 @@ export function BuildingsTilesInput({ clue, onCorrect }) {
         {clue.images.map((img, i) => (
           <div key={i} className="flex gap-5 items-center bg-dg-adim/5 p-4 rounded-3xl border border-dg-border">
             <div className="w-20 h-20 rounded-2xl overflow-hidden border border-dg-border shrink-0">
-               <div className="relative w-full h-full bg-dg-bg flex items-center justify-center overflow-hidden">
-                 {!failedImages.includes(i) && (
-                   <img
-                     src={img.url}
-                     className="w-full h-full object-cover"
-                     loading="lazy"
-                     alt={img.name}
-                     onError={() => setFailedImages(prev => (prev.includes(i) ? prev : [...prev, i]))}
-                   />
-                 )}
-                 {failedImages.includes(i) && (
-                   <div className="absolute inset-0 text-[10px] uppercase tracking-[0.2em] text-dg-muted flex items-center justify-center px-2 text-center">
-                     image unavailable
-                   </div>
-                 )}
-               </div>
+              <div className="relative w-full h-full bg-dg-bg flex items-center justify-center overflow-hidden">
+                {!failedImages.includes(i) && (
+                  <img
+                    src={img.url}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    alt={img.name}
+                    onError={() => setFailedImages(prev => (prev.includes(i) ? prev : [...prev, i]))}
+                  />
+                )}
+                {failedImages.includes(i) && (
+                  <div className="absolute inset-0 text-[10px] uppercase tracking-[0.2em] text-dg-muted flex items-center justify-center px-2 text-center">
+                    image unavailable
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex flex-col gap-2 flex-1 min-w-0">
-               <button onClick={() => place(i, 'name')} className={`h-10 border-b text-left px-2 font-serif text-[14px] transition-all cursor-pointer ${placements[i].name ? 'border-dg-accent text-dg-accent' : 'border-dg-border text-dg-muted opacity-40'}`}>
-                 {placements[i].name || 'name'}
-               </button>
-               <button onClick={() => place(i, 'city')} className={`h-10 border-b text-left px-2 font-serif text-[14px] transition-all cursor-pointer ${placements[i].city ? 'border-dg-accent text-dg-accent' : 'border-dg-border text-dg-muted opacity-40'}`}>
-                 {placements[i].city || 'city'}
-               </button>
+              <button onClick={() => place(i, 'name')} className={`h-10 border-b text-left px-2 font-serif text-[14px] transition-all cursor-pointer ${placements[i].name ? 'border-dg-accent text-dg-accent' : 'border-dg-border text-dg-muted opacity-40'}`}>
+                {placements[i].name || 'name'}
+              </button>
+              <button onClick={() => place(i, 'city')} className={`h-10 border-b text-left px-2 font-serif text-[14px] transition-all cursor-pointer ${placements[i].city ? 'border-dg-accent text-dg-accent' : 'border-dg-border text-dg-muted opacity-40'}`}>
+                {placements[i].city || 'city'}
+              </button>
             </div>
           </div>
         ))}
@@ -332,9 +332,9 @@ export function BuildingsTilesInput({ clue, onCorrect }) {
       <div className="space-y-6">
         <Mono size={10} className="block opacity-40 uppercase tracking-widest">Available Labels</Mono>
         <div className="flex flex-wrap gap-2.5">
-           {remainingTiles.map((t, i) => (
-             <button key={i} onClick={() => selectTile(t)} className={`px-4 py-2 rounded-xl border text-[13px] font-serif transition-all cursor-pointer ${selectedTile?.val === t ? 'bg-dg-accent border-dg-accent text-dg-bg scale-105' : 'border-dg-border text-dg-fg/70 hover:border-dg-accent'}`}>{t}</button>
-           ))}
+          {remainingTiles.map((t, i) => (
+            <button key={i} onClick={() => selectTile(t)} className={`px-4 py-2 rounded-xl border text-[13px] font-serif transition-all cursor-pointer ${selectedTile?.val === t ? 'bg-dg-accent border-dg-accent text-dg-bg scale-105' : 'border-dg-border text-dg-fg/70 hover:border-dg-accent'}`}>{t}</button>
+          ))}
         </div>
       </div>
       <GhostBtn onClick={submit} className="w-full" disabled={placements.some(p => !p.name || !p.city)}>submit identifications</GhostBtn>
